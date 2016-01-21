@@ -10,11 +10,16 @@
 Servo servo;
 
 /****** Global State Variables *****/
+#define SERVO_MAX 2000
+#define SERVO_MIN 1000
+#define JOYSTICK_MAX 1024
+#define JOYSTICK_MIN 0
+
 int joystickRead = 0;
 int lightRead = 0;
 
 void setup() {
- 
+  servo.attach(SERVO_PIN);
 
 }
 
@@ -33,7 +38,9 @@ void readLight()
 /****** Write Tasks *******/
 void writeServo()
 {
-  
+  int pulseWidth = map(joystickRead, JOYSTICK_MIN, JOYSTICK_MAX, SERVO_MIN, SERVO_MAX);
+
+  servo.writeMicroseconds(pulseWidth);  
 }
 
 void updateDisplay()
