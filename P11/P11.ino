@@ -67,6 +67,9 @@ void updateDisplay()
     lcd.setCursor(0, 0);
     lcd.print("Joy: ");
     lcd.print(joystickRead);
+    if (joystickRead < 1000) {
+      lcd.print(" ");
+    }
 
     // Joystick status consumes chars 0-11
     // Button status
