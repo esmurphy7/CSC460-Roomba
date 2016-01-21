@@ -21,7 +21,7 @@ void setup() {
 /****** Read Tasks *******/
 void readJoystick()
 {
-  
+  joystickRead = analogRead(JOYSTICK_PIN);
 }
 
 void readLight()
