@@ -40,7 +40,7 @@ void readJoystick()
 
 void readLight()
 {
-  
+ lightRead = analogRead(LIGHT_SENSOR_PIN); 
 }
 
 void readButton()
@@ -58,7 +58,14 @@ void writeServo()
 
 void writeLaser()
 {
+  // Laser state inverts the button state because an open button gives a HIGH signal but needs LOW laser
+  if (buttonState == LOW) {
+    laserState = HIGH;
+  } else {
+    laserState = LOW;
+  }
   
+  digitalWrite(LASER_PIN, laserState);
 }
 
 void updateDisplay()
@@ -85,6 +92,9 @@ void updateDisplay()
     lcd.setCursor(0, 1);
     lcd.print("Lht: ");
     lcd.print(lightRead);
+    if (lightRead < 10) {
+      lcd.print(" ");
+    }
 
     // Render laser status (bottom right)
     lcd.setCursor(11, 1);
