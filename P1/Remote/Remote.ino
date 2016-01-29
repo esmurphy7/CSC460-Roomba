@@ -12,7 +12,6 @@
 #define SERVO_PIN 26
 
 /****** Handles *******/
-LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 Servo servo;
 
 /****** Global State Variables *****/
@@ -20,6 +19,7 @@ Servo servo;
 #define SERVO_MIN 1000
 #define JOYSTICK_MAX 1024
 #define JOYSTICK_MIN 0
+#define SERIAL1_TIMEOUT 50
 
 int joystickRead = 0;
 int lightRead = 0;
@@ -27,27 +27,19 @@ int buttonState = HIGH; // LOW when clicked, HIGH when open
 int laserState = LOW;
 
 void setup() {
+  Serial1.begin(9600);
+  Serial1.setTimeout(SERIAL1_TIMEOUT);
+  Serial.begin(9600);
   servo.attach(SERVO_PIN);
-  lcd.begin(16, 2);
   
   pinMode(BUTTON_PIN, INPUT);
   pinMode(LASER_PIN, OUTPUT);
 }
 
 /****** Read Tasks *******/
-void readJoystick()
-{
-  joystickRead = analogRead(JOYSTICK_PIN);
-}
-
 void readLight()
 {
  lightRead = analogRead(LIGHT_SENSOR_PIN); 
-}
-
-void readButton()
-{
-  buttonState = digitalRead(BUTTON_PIN);
 }
 
 /****** Write Tasks *******/
@@ -61,7 +53,7 @@ void writeServo()
 void writeLaser()
 {
   // Laser state inverts the button state because an open button gives a HIGH signal but needs LOW laser
-  if (buttonState == LOW) {
+  if (buttonState == HIGH) {
     laserState = HIGH;
   } else {
     laserState = LOW;
@@ -70,51 +62,45 @@ void writeLaser()
   digitalWrite(LASER_PIN, laserState);
 }
 
-void updateDisplay()
+String getValue(String data, char separator, int index)
 {
-    // Joystick status (top left)
-    lcd.setCursor(0, 0);
-    lcd.print("Joy: ");
-    lcd.print(joystickRead);
-    if (joystickRead < 1000) {
-      lcd.print(" ");
+  int found = 0;
+  int strIndex[] = {0, -1  };
+  int maxIndex = data.length()-1;
+  for(int i=0; i<=maxIndex && found<=index; i++)
+  {
+    if(data.charAt(i)==separator || i==maxIndex)
+    {
+      found++;
+      strIndex[0] = strIndex[1]+1;
+      strIndex[1] = (i == maxIndex) ? i+1 : i;
     }
+  }
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
+}
 
-    // Joystick status consumes chars 0-11
-    // Button status
-    lcd.setCursor(10, 0);
-    lcd.print("Btn: ");
-    if (buttonState == LOW) {
-      lcd.print("Y");
-    } else {
-      lcd.print("N");
-    }
-    
-    // Render light status (bottom left)
-    lcd.setCursor(0, 1);
-    lcd.print("Lht: ");
-    lcd.print(lightRead);
-    if (lightRead < 10) {
-      lcd.print(" ");
-    }
+void readSerial()
+{
+  const char delim = '|';
+  const int joystickIndex = 0;
+  const int buttonIndex = 1;
+  if(Serial1.available())
+  {
+    String msg = Serial1.readString();
+    Serial.println(msg);
+    String joystickVal = getValue(msg, delim, joystickIndex);
+    String buttonVal = getValue(msg, delim, buttonIndex);
 
-    // Render laser status (bottom right)
-    lcd.setCursor(11, 1);
-    lcd.print("Lz: ");
-    if (laserState == LOW) {
-      lcd.print("N");
-    } else {
-      lcd.print("Y");
-    }
+    joystickRead = joystickVal.toInt();
+    buttonState = buttonVal.toInt();
+  }
 }
 
 void loop() {
-  readJoystick();
+  readSerial();
   readLight();
-  readButton();
   writeServo();
   writeLaser();
-  updateDisplay();
 
   delay(100);
 }
