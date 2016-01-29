@@ -2,12 +2,14 @@
 #include <LiquidCrystal.h>
 
 /****** Pin Definitions *******/
-#define JOYSTICK_PIN 11
-#define BUTTON_PIN 21
+/* Analog */
 #define LIGHT_SENSOR_PIN 10
+#define JOYSTICK_PIN 11
 
-#define SERVO_PIN 22
-#define LASER_PIN 23
+/* Digital */
+#define BUTTON_PIN 22
+#define LASER_PIN 24
+#define SERVO_PIN 26
 
 /****** Handles *******/
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
