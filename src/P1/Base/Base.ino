@@ -1,4 +1,5 @@
 #include <LiquidCrystal.h>
+#include "scheduler.h"
 
 /****** Pin Definitions *******/
 /* Analog */
@@ -20,12 +21,6 @@ int lightRead = 0;
 int buttonState = HIGH; // LOW when clicked, HIGH when open
 
 unsigned long previousSerialWrite = 0;
-
-void setup() {
-  lcd.begin(16, 2);
-  pinMode(BUTTON_PIN, INPUT);
-  Serial1.begin(9600);
-}
 
 /****** Read Tasks *******/
 void readJoystick()
@@ -91,13 +86,33 @@ void writeSerial()
   Serial1.println(serialString);
 }
 
-void loop() {
-  readJoystick();
-  readLight();
-  readButton();
-  writeSerial();
-  updateDisplay();
-  writeSerial();
+void idle(uint32_t idle_period)
+{
+  digitalWrite(13, HIGH);
+  delay(idle_period);
+  digitalWrite(13, LOW);
+}
 
-  delay(100);
+void setup() {
+  lcd.begin(16, 2);
+  pinMode(BUTTON_PIN, INPUT);
+  Serial1.begin(9600);
+
+  Scheduler_Init();
+ 
+  Scheduler_StartTask(0, 100, readJoystick);
+  Scheduler_StartTask(0, 100, readLight);
+  Scheduler_StartTask(0, 100, readButton);
+  Scheduler_StartTask(0, 100, writeSerial);
+  Scheduler_StartTask(0, 100, updateDisplay);
+  Scheduler_StartTask(0, 100, writeSerial);
+}
+
+void loop() {
+  uint32_t idle_period = Scheduler_Dispatch();
+  
+  if (idle_period)
+  {
+    idle(idle_period);
+  }
 }
