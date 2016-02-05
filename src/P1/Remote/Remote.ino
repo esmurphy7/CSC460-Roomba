@@ -107,16 +107,13 @@ void updateDisplay()
     // Render light status (bottom left)
     lcd.setCursor(0, 1);
     lcd.print("Lht: ");
-    lcd.print(lightRead);
-    // Pad he output with spaces to hide stagnant values
-    if (lightRead < 1000) {
-      lcd.print(" ");
+    if(lightRead > 100)
+    {
+      lcd.print("HIT");
     }
-    if (lightRead < 100) {
-      lcd.print(" ");
-    }
-    if (lightRead < 10) {
-      lcd.print(" ");
+    else
+    {
+      lcd.print("   ");
     }
 
     digitalWrite(DEBUG_DISPLAY_PIN, LOW);
