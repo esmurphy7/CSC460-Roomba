@@ -28,6 +28,7 @@ LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 #define JOYSTICK_MAX 1024
 #define JOYSTICK_MIN 0
 #define SERIAL1_TIMEOUT 20
+#define LIGHT_THRESHOLD 100
 
 int joystickRead = 0;
 int lightRead = 0;
@@ -107,7 +108,7 @@ void updateDisplay()
     // Render light status (bottom left)
     lcd.setCursor(0, 1);
     lcd.print("Lht: ");
-    if(lightRead > 100)
+    if(lightRead > LIGHT_THRESHOLD)
     {
       lcd.print("HIT");
     }
@@ -145,6 +146,20 @@ void writeLaser()
   digitalWrite(DEBUG_LASER_PIN, LOW); 
 }
 
+void writeSerial()
+{
+  digitalWrite(DEBUG_SERIAL_PIN, HIGH);
+
+  String serialString = "0"; 
+  if(lightRead > LIGHT_THRESHOLD)
+  {
+    serialString = "1"; 
+  }
+  Serial1.println(serialString);
+
+  digitalWrite(DEBUG_SERIAL_PIN, LOW);
+}
+
 void idle(uint32_t idle_period)
 {
   digitalWrite(DEBUG_IDLE_PIN, HIGH);
@@ -170,11 +185,12 @@ void setup()
 
   Scheduler_Init();
 
-  Scheduler_StartTask(10, 100, readLight);
-  Scheduler_StartTask(20, 100, readSerial);
-  Scheduler_StartTask(30, 100, writeLaser);
-  Scheduler_StartTask(40, 100, writeServo); 
-  Scheduler_StartTask(50, 250, updateDisplay); 
+  Scheduler_StartTask(10, 50, readLight);
+  Scheduler_StartTask(20, 50, readSerial);
+  Scheduler_StartTask(30, 50, writeLaser);
+  Scheduler_StartTask(40, 50, writeServo); 
+  Scheduler_StartTask(50, 50, writeSerial); 
+  Scheduler_StartTask(60, 250, updateDisplay); 
 }
 
 void loop()
