@@ -16,10 +16,11 @@
 #define DEBUG_LASER_PIN 51
 #define DEBUG_SERIAL_PIN 49
 #define DEBUG_IDLE_PIN 47
+#define DEBUG_DISPLAY_PIN 45
 
 /****** Handles *******/
 Servo servo;
-
+LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 /****** Global State Variables *****/
 #define SERVO_MAX 170
 #define SERVO_MIN 10
@@ -50,7 +51,7 @@ void readSerial()
     String msg = Serial1.readString();
     String joystickVal = getValue(msg, delim, joystickIndex);
     String buttonVal = getValue(msg, delim, buttonIndex);
-
+    Serial.println(msg);
     joystickRead = joystickVal.toInt();
     buttonState = buttonVal.toInt();
   }
@@ -76,6 +77,48 @@ String getValue(String data, char separator, int index)
 }
 
 /****** Write Tasks *******/
+void updateDisplay()
+{
+    digitalWrite(DEBUG_DISPLAY_PIN, HIGH);
+    
+    // Joystick status (top left)
+    lcd.setCursor(0, 0);
+    lcd.print("Joy: ");
+    lcd.print(joystickRead);
+    if (joystickRead < 1000) {
+      lcd.print(" ");
+    }
+    if (lightRead < 100) {
+      lcd.print(" ");
+    }
+    if (lightRead < 10) {
+      lcd.print(" ");
+    }
+
+    // Joystick status consumes chars 0-11
+    // Button status
+    lcd.setCursor(10, 0);
+    lcd.print("Btn: ");
+    buttonState ? lcd.print("Y") : lcd.print("N");
+    
+    // Render light status (bottom left)
+    lcd.setCursor(0, 1);
+    lcd.print("Lht: ");
+    lcd.print(lightRead);
+    // Pad he output with spaces to hide stagnant values
+    if (lightRead < 1000) {
+      lcd.print(" ");
+    }
+    if (lightRead < 100) {
+      lcd.print(" ");
+    }
+    if (lightRead < 10) {
+      lcd.print(" ");
+    }
+
+    digitalWrite(DEBUG_DISPLAY_PIN, LOW);
+}
+
 void writeServo()
 {
   digitalWrite(DEBUG_SERVO_PIN, HIGH);
@@ -115,6 +158,7 @@ void setup()
   Serial1.setTimeout(SERIAL1_TIMEOUT);
   Serial.begin(9600);
   servo.attach(SERVO_PIN);
+  lcd.begin(16, 2);
   
   pinMode(BUTTON_PIN, INPUT);
   pinMode(LASER_PIN, OUTPUT);
@@ -125,10 +169,11 @@ void setup()
 
   Scheduler_Init();
 
-  Scheduler_StartTask(10, 100, readLight);
+  //Scheduler_StartTask(10, 100, readLight);
   Scheduler_StartTask(20, 100, readSerial);
   Scheduler_StartTask(30, 100, writeLaser);
-  Scheduler_StartTask(40, 100, writeServo);  
+  Scheduler_StartTask(40, 100, writeServo); 
+  Scheduler_StartTask(50, 250, updateDisplay); 
 }
 
 void loop()
