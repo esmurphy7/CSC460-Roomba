@@ -27,7 +27,7 @@ LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 #define SERVO_MIN 10
 #define JOYSTICK_MAX 1024
 #define JOYSTICK_MIN 0
-#define SERIAL1_TIMEOUT 5
+#define SERIAL1_TIMEOUT 20
 
 int joystickRead = 0;
 int lightRead = 0;
