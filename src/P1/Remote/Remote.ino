@@ -28,7 +28,7 @@ LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 #define JOYSTICK_MAX 1024
 #define JOYSTICK_MIN 0
 #define SERIAL1_TIMEOUT 20
-#define LIGHT_THRESHOLD 100
+#define LIGHT_THRESHOLD 200
 
 int joystickRead = 0;
 int lightRead = 0;
@@ -122,13 +122,13 @@ void updateDisplay()
 
 void writeServo()
 {
-  digitalWrite(DEBUG_SERVO_PIN, HIGH);
+  //digitalWrite(DEBUG_SERVO_PIN, HIGH);
   
   int deg = map(joystickRead, JOYSTICK_MIN, JOYSTICK_MAX, SERVO_MIN, SERVO_MAX);
 
   servo.write(deg);  
 
-  digitalWrite(DEBUG_SERVO_PIN, LOW);
+  //digitalWrite(DEBUG_SERVO_PIN, LOW);
 }
 
 void writeLaser()
@@ -148,7 +148,7 @@ void writeLaser()
 
 void writeSerial()
 {
-  digitalWrite(DEBUG_SERIAL_PIN, HIGH);
+  digitalWrite(DEBUG_SERVO_PIN, HIGH);
 
   String serialString = "0"; 
   if(lightRead > LIGHT_THRESHOLD)
@@ -157,7 +157,7 @@ void writeSerial()
   }
   Serial1.println(serialString);
 
-  digitalWrite(DEBUG_SERIAL_PIN, LOW);
+  digitalWrite(DEBUG_SERVO_PIN, LOW);
 }
 
 void idle(uint32_t idle_period)
@@ -182,6 +182,7 @@ void setup()
   pinMode(DEBUG_SERIAL_PIN, OUTPUT);
   pinMode(DEBUG_IDLE_PIN, OUTPUT);
   pinMode(DEBUG_LIGHT_PIN, OUTPUT);
+  pinMode(DEBUG_DISPLAY_PIN, OUTPUT);
 
   Scheduler_Init();
 

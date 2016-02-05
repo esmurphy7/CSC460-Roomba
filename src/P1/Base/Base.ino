@@ -141,7 +141,7 @@ void updateDisplay()
 
 void writeSerial()
 {
-  digitalWrite(DEBUG_SERIAL_PIN, HIGH);
+  digitalWrite(DEBUG_LIGHT_PIN, HIGH);
   
   String serialString = (String)joystickRead;
   serialString = serialString + "|";
@@ -149,7 +149,7 @@ void writeSerial()
 
   Serial1.println(serialString);
 
-  digitalWrite(DEBUG_SERIAL_PIN, LOW);
+  digitalWrite(DEBUG_LIGHT_PIN, LOW);
 }
 
 void idle(uint32_t idle_period)
