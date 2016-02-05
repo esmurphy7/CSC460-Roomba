@@ -17,6 +17,7 @@
 #define DEBUG_SERIAL_PIN 49
 #define DEBUG_IDLE_PIN 47
 #define DEBUG_DISPLAY_PIN 45
+#define DEBUG_LIGHT_PIN 43
 
 /****** Handles *******/
 Servo servo;
@@ -36,7 +37,9 @@ int laserState = LOW;
 /****** Read Tasks *******/
 void readLight()
 {
- lightRead = analogRead(LIGHT_SENSOR_PIN); 
+  digitalWrite(DEBUG_LIGHT_PIN, HIGH);
+  lightRead = analogRead(LIGHT_SENSOR_PIN);
+  digitalWrite(DEBUG_LIGHT_PIN, LOW);
 }
 
 void readSerial()
@@ -166,10 +169,11 @@ void setup()
   pinMode(DEBUG_LASER_PIN, OUTPUT);
   pinMode(DEBUG_SERIAL_PIN, OUTPUT);
   pinMode(DEBUG_IDLE_PIN, OUTPUT);
+  pinMode(DEBUG_LIGHT_PIN, OUTPUT);
 
   Scheduler_Init();
 
-  //Scheduler_StartTask(10, 100, readLight);
+  Scheduler_StartTask(10, 100, readLight);
   Scheduler_StartTask(20, 100, readSerial);
   Scheduler_StartTask(30, 100, writeLaser);
   Scheduler_StartTask(40, 100, writeServo); 
