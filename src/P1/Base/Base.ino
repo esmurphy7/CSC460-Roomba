@@ -20,8 +20,7 @@
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 /****** Global State Variables ******/
-#define JOYSTICK_MAX 1024
-#define JOYSTICK_MIN 0
+#define SERIAL1_TIMEOUT 20
 
 int joystickRead = 0;
 int lightRead = 0;
@@ -60,11 +59,38 @@ void readJoystick()
   digitalWrite(DEBUG_JOYSTICK_PIN, LOW);
 }
 
-void readLight()
+void readSerial()
 {
-  digitalWrite(DEBUG_LIGHT_PIN, HIGH);
-  lightRead = analogRead(LIGHT_SENSOR_PIN);
-  digitalWrite(DEBUG_LIGHT_PIN, LOW);
+  digitalWrite(DEBUG_SERIAL_PIN, HIGH);
+  
+  const char delim = '|';
+  const int lightHitIndex = 0;
+  if(Serial1.available())
+  {
+    String msg = Serial1.readString();
+    String lightHit = getValue(msg, delim, lightHitIndex);
+    Serial.println(msg);
+    lightRead = lightHit.toInt();
+  }
+
+  digitalWrite(DEBUG_SERIAL_PIN, LOW);
+}
+
+String getValue(String data, char separator, int index)
+{
+  int found = 0;
+  int strIndex[] = {0, -1  };
+  int maxIndex = data.length()-1;
+  for(int i=0; i<=maxIndex && found<=index; i++)
+  {
+    if(data.charAt(i)==separator || i==maxIndex)
+    {
+      found++;
+      strIndex[0] = strIndex[1]+1;
+      strIndex[1] = (i == maxIndex) ? i+1 : i;
+    }
+  }
+  return found>index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
 void readButton()
@@ -86,7 +112,7 @@ void updateDisplay()
     if (joystickRead < 1000) {
       lcd.print(" ");
     }
-    if (lightRead < 100) {
+    if (lightRead == 1) {
       lcd.print(" ");
     }
     if (lightRead < 10) {
@@ -102,16 +128,12 @@ void updateDisplay()
     // Render light status (bottom left)
     lcd.setCursor(0, 1);
     lcd.print("Lht: ");
-    lcd.print(lightRead);
     // Pad he output with spaces to hide stagnant values
-    if (lightRead < 1000) {
-      lcd.print(" ");
+    if (lightRead == 1) {
+      lcd.print("HIT");
     }
-    if (lightRead < 100) {
-      lcd.print(" ");
-    }
-    if (lightRead < 10) {
-      lcd.print(" ");
+    else {
+      lcd.print("   ");
     }
 
     digitalWrite(DEBUG_DISPLAY_PIN, LOW);
@@ -140,6 +162,7 @@ void idle(uint32_t idle_period)
 void setup() {
   lcd.begin(16, 2);
   Serial1.begin(9600);
+  Serial1.setTimeout(SERIAL1_TIMEOUT);
   
   pinMode(BUTTON_PIN, INPUT);
 
@@ -152,10 +175,10 @@ void setup() {
 
   Scheduler_Init();
  
-  Scheduler_StartTask(0, 100,  readJoystick);
-  Scheduler_StartTask(10, 100, readLight);
-  Scheduler_StartTask(20, 100, readButton);
-  Scheduler_StartTask(30, 100, writeSerial);
+  Scheduler_StartTask(0, 50,  readJoystick);
+  Scheduler_StartTask(10, 50, readSerial);
+  Scheduler_StartTask(20, 50, readButton);
+  Scheduler_StartTask(30, 50, writeSerial);
   Scheduler_StartTask(40, 250, updateDisplay);
 }
 
