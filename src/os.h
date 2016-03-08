@@ -224,6 +224,8 @@ void OS_Init(void);
  */
 void OS_Abort(void);
 
+void OS_Start(void);
+
   /*=====  Task API ===== */
 
  /**

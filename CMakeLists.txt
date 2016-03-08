@@ -82,5 +82,5 @@ add_custom_target(
 )
 
 add_executable(CSC460-Roomba
-    src/test001_sanity.c
+        src/main.c
 )
