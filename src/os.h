@@ -245,7 +245,7 @@ void OS_Start(void);
    *  to be used in the PPP[] array. Otherwise, \a name is ignored.
    * \sa \ref policy
    */
-int   Task_Create(void (*f)(void), int arg, unsigned int level, unsigned int name);
+int Task_Create(void (*f)(void), int arg, unsigned int level, unsigned int name);
 
 /**
  * Terminate the calling process

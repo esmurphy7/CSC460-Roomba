@@ -1,3 +1,4 @@
+#include "os.h"
 #include <string.h>
 #include <util/delay.h>
 #include <avr/io.h>
@@ -33,10 +34,6 @@
 #define DEBUG
 
 typedef void (*voidfuncptr) (void);      /* pointer to void f(void) */
-
-#define WORKSPACE     256
-#define MAXPROCESS   4
-
 
 /*===========
   * RTOS Internal
@@ -349,8 +346,10 @@ void OS_Start()
   * each task gives up its share of the processor voluntarily by calling
   * Task_Next().
   */
-void Task_Create( voidfuncptr f)
+int Task_Create(void (*f)(void), int arg, unsigned int level, unsigned int name)
 {
+    PORTL = 0x00;
+
     if (KernelActive ) {
         Disable_Interrupt();
         Cp ->request = CREATE;
@@ -360,6 +359,8 @@ void Task_Create( voidfuncptr f)
         /* call the RTOS function directly */
         Kernel_Create_Task( f );
     }
+
+    return 0;
 }
 
 /**

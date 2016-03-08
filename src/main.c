@@ -9,7 +9,6 @@
 #include <avr/interrupt.h>
 #include "os.h"
 
-
 /*============
   * A Simple Test
   *============
@@ -24,7 +23,7 @@ void Ping()
     int x;
 
     for(;;) {
-        PORTL = 0b00000001;
+        PORTL = 0b00000000;
     }
 }
 
@@ -38,7 +37,7 @@ void Pong()
     int x;
 
     for(;;) {
-        PORTL = 0b00000010;
+        PORTL = 0b00000000;
     }
 }
 
