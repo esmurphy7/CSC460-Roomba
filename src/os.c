@@ -367,7 +367,9 @@ static void kernel_handle_request(void)
 #define    SAVE_CTX_TOP()       asm volatile (\
     "push   r31             \n\t"\
     "in     r31,__SREG__    \n\t"\
-    "cli                    \n\t"::); /* Disable interrupt */
+    "push   r31             \n\t"\
+    "in     r31,0X3C    \n\t"\
+    "cli                    \n\t"::); /* Dsisable interrupt */
 
 #define STACK_SREG_SET_I_BIT()    asm volatile (\
     "ori    r31, 0x80        \n\t"::);
@@ -446,6 +448,8 @@ static void kernel_handle_request(void)
     "pop    r28             \n\t"\
     "pop    r29             \n\t"\
     "pop    r30             \n\t"\
+    "pop    r31             \n\t"\
+	"out    0X3C, r31    \n\t"\
     "pop    r31             \n\t"\
 	"out    __SREG__, r31    \n\t"\
     "pop    r31             \n\t"::);
@@ -1016,8 +1020,6 @@ void OS_Init()
 {
     int i;
 
-    /* Set up the clocks */
-    CLOCK8MHZ();
 
     TCCR1B &= ~(_BV(CS12) | _BV(CS11));
     TCCR1B |= (_BV(CS10));

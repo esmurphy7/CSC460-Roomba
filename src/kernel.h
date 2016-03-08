@@ -14,9 +14,6 @@
 #include <avr/io.h>
 #include "os.h"
 
-/** Disable default prescaler to make processor speed 8 MHz. */
-#define CLOCK8MHZ()    CLKPR = (1<<CLKPCE); CLKPR = 0x00;
-
 #define Disable_Interrupt()     asm volatile ("cli"::)
 #define Enable_Interrupt()     asm volatile ("sei"::)
 
