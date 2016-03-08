@@ -7,6 +7,7 @@
  *
  */
 #include <avr/interrupt.h>
+#include <avr/delay.h>
 #include "os.h"
 
 /*============
@@ -23,7 +24,9 @@ void Ping()
     int x;
 
     for(;;) {
-        PORTL = 0b00000000;
+        PORTL = 0b00000010;
+        _delay_ms(1000);
+        Task_Next();
     }
 }
 
@@ -37,35 +40,12 @@ void Pong()
     int x;
 
     for(;;) {
-        PORTL = 0b00000000;
+        PORTL = 0b00000001;
+        _delay_ms(1000);
+        Task_Next();
     }
 }
 
-/******
- * Rudimentary round-robin Scheduling
- */
-volatile uint16_t timer_millis = 0;
-
-void setupTimer()
-{
-    // Set the Timer Mode to CTC
-    TCCR0A |= (1 << WGM01);
-
-    // Set the value that you want to count to
-    OCR0A = 194;
-
-    TIMSK0 |= (1 << OCIE0A); //Set the ISR COMPA vect
-
-    sei();
-
-    // 1024 prescaler
-    TCCR0B |= (1 << CS02) | (1 << CS00);
-}
-
-ISR(TIMER0_COMPA_vect)
-{
-    asm("jmp Task_Next"::);
-}
 
 /**
   * This function creates two cooperative tasks, "Ping" and "Pong". Both
@@ -79,8 +59,6 @@ void main()
     OS_Init();
     Task_Create(Pong, 0, 0, 0);
     Task_Create(Ping, 0, 0, 0);
-
-    setupTimer();
 
     OS_Start();
 }
