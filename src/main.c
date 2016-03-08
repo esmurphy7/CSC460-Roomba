@@ -12,6 +12,8 @@ void round_robin(void)
 {
     for(;;)
     {
+        PORTL = 0xFF;
+
         _delay_ms(1000);
         Event_Signal(print_event);
         Task_Next();

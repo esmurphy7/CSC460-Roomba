@@ -32,7 +32,7 @@ extern const unsigned int PT;
 static task_descriptor_t* cur_task = NULL;
 
 /** Since this is a "full-served" model, the kernel is executing using its own stack. */
-static volatile uint16_t kernel_sp;
+static volatile uint16_t kernel_sp[3];
 
 /** This table contains all task descriptors, regardless of state, plus idler. */
 static task_descriptor_t task_desc[MAXPROCESS + 1];
@@ -367,14 +367,14 @@ static void kernel_handle_request(void)
 #define    SAVE_CTX_TOP()       asm volatile (\
     "push   r31             \n\t"\
     "in     r31,__SREG__    \n\t"\
-    "push   r31             \n\t"\
-    "in     r31,0X3C    \n\t"\
     "cli                    \n\t"::); /* Dsisable interrupt */
 
 #define STACK_SREG_SET_I_BIT()    asm volatile (\
     "ori    r31, 0x80        \n\t"::);
 
 #define    SAVE_CTX_BOTTOM()       asm volatile (\
+    "push   r31             \n\t"\
+    "in     r31,0X3C        \n\t"\
     "push   r31             \n\t"\
     "push   r30             \n\t"\
     "push   r29             \n\t"\
@@ -481,12 +481,16 @@ static void exit_kernel(void)
     /*
      * The last piece of the context is the SP. Save it to a variable.
      */
-    kernel_sp = SP;
+    cur_task->sp[0] = EIND;
+    cur_task->sp[1] = *(&SP + 1);
+    cur_task->sp[2] = SP;
 
     /*
-     * Now restore the task's context, SP first.
+     * Now restore the kernel's context, SP first.
      */
-    SP = (uint16_t)(cur_task->sp);
+    EIND = kernel_sp[0];
+    *(&SP + 1) = kernel_sp[1];
+    SP = kernel_sp[2];
 
     /*
      * Now restore I/O and SREG registers.
@@ -526,12 +530,16 @@ static void enter_kernel(void)
     /*
      * The last piece of the context is the SP. Save it to a variable.
      */
-    cur_task->sp = (uint8_t*)SP;
+    cur_task->sp[0] = EIND;
+    cur_task->sp[1] = *(&SP + 1);
+    cur_task->sp[2] = SP;
 
     /*
      * Now restore the kernel's context, SP first.
      */
-    SP = kernel_sp;
+    EIND = kernel_sp[0];
+    *(&SP + 1) = kernel_sp[1];
+    SP = kernel_sp[2];
 
     /*
      * Now restore I/O and SREG registers.
