@@ -110,7 +110,13 @@ typedef struct ProcessDescriptor
     PROCESS_STATES state;
     voidfuncptr  code;   /* function to be executed as a task */
     KERNEL_REQUEST_TYPE request;
+
+    int name;
+    int arg;
+    int level;
 } PD;
+
+EVENT * Event_Init(void);
 
 /**
   * This table contains ALL process descriptors. It doesn't matter what
@@ -155,7 +161,7 @@ volatile static unsigned int Tasks;
  * can just restore its execution context on its stack.
  * (See file "cswitch.S" for details.)
  */
-void Kernel_Create_Task_At( PD *p, voidfuncptr f )
+void Kernel_Create_Task_At(PD *p, voidfuncptr f, int arg, unsigned int level, unsigned int name)
 {
     unsigned char *sp;
 
@@ -202,21 +208,21 @@ void Kernel_Create_Task_At( PD *p, voidfuncptr f )
    sp = sp - 34;
 #endif
 
-    p->sp = sp;		/* stack pointer into the "workSpace" */
-    p->code = f;		/* function to be executed as a task */
+    p->sp = sp;
+    p->code = f;
+    p->arg = arg;
+    p->level = level;
+    p->name = name;
     p->request = NONE;
 
-    /*----END of NEW CODE----*/
-
     p->state = READY;
-
 }
 
 
 /**
   *  Create a new task
   */
-static void Kernel_Create_Task( voidfuncptr f )
+static void Kernel_Create_Task(voidfuncptr f, int arg, unsigned int level, unsigned int name)
 {
     int x;
 
@@ -228,8 +234,7 @@ static void Kernel_Create_Task( voidfuncptr f )
     }
 
     ++Tasks;
-    Kernel_Create_Task_At( &(Process[x]), f );
-
+    Kernel_Create_Task_At(&(Process[x]), f, arg, level, name);
 }
 
 
@@ -279,7 +284,7 @@ static void Next_Kernel_Request()
 
         switch(Cp->request){
             case CREATE:
-                Kernel_Create_Task( Cp->code );
+                Kernel_Create_Task(Cp->code, Cp->arg, Cp->level, Cp->name);
                 break;
             case NEXT:
             case NONE:
@@ -348,14 +353,17 @@ void OS_Start()
   */
 int Task_Create(void (*f)(void), int arg, unsigned int level, unsigned int name)
 {
-    if (KernelActive ) {
+    if (KernelActive) {
         Disable_Interrupt();
-        Cp ->request = CREATE;
+        Cp->request = CREATE;
         Cp->code = f;
+        Cp->arg = arg;
+        Cp->level = level;
+        Cp->name = name;
         Enter_Kernel();
     } else {
         /* call the RTOS function directly */
-        Kernel_Create_Task( f );
+        Kernel_Create_Task(f, arg, level, name);
     }
 
     return 0;
@@ -368,7 +376,7 @@ void Task_Next()
 {
     if (KernelActive) {
         Disable_Interrupt();
-        Cp ->request = NEXT;
+        Cp->request = NEXT;
         Enter_Kernel();
     }
 }
