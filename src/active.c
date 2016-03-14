@@ -432,21 +432,23 @@ volatile uint16_t timer_millis = 0;
 
 void setupTimer()
 {
-    // Set the Timer Mode to CTC
-    TCCR0A |= (1 << WGM01);
+    OCR1A = 0x3D08;
 
-    // Set the value that you want to count to
-    OCR0A = 194;
+    TCCR1B |= (1 << WGM12);
+    // Mode 4, CTC on OCR1A
 
-    TIMSK0 |= (1 << OCIE0A); //Set the ISR COMPA vect
+    TIMSK1 |= (1 << OCIE1A);
+    //Set interrupt on compare match
+
+    TCCR1B |= (1 << CS12) | (1 << CS10);
+    // set prescaler to 1024 and start the timer
+
 
     sei();
-
-    // 1024 prescaler
-    TCCR0B |= (1 << CS02) | (1 << CS00);
+    // enable interrupts
 }
 
-ISR(TIMER0_COMPA_vect)
+ISR(TIMER1_COMPA_vect)
 {
     PORTL = 0x00;
     asm("jmp Task_Next"::);
