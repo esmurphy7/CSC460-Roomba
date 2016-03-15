@@ -114,7 +114,19 @@ typedef struct ProcessDescriptor
     int name;
     int arg;
     int level;
+    struct ProcessDescriptor* next;
 } PD;
+
+/**
+ * @brief Contains pointers to head and tail of a linked list.
+ */
+typedef struct
+{
+    /** The first item in the queue. NULL if the queue is empty. */
+    volatile PD*  head;
+    /** The last item in the queue. Undefined if the queue is empty. */
+    volatile PD*  tail;
+} Q;
 
 EVENT * Event_Init(void);
 
@@ -122,7 +134,9 @@ EVENT * Event_Init(void);
   * This table contains ALL process descriptors. It doesn't matter what
   * state a task is in.
   */
-static PD Process[MAXPROCESS];
+static PD Process[MAXPROCESS + 1];
+
+static PD* idle_task = &Process[MAXPROCESS];
 
 /**
   * The process descriptor of the currently RUNNING task.
@@ -154,6 +168,19 @@ volatile static unsigned int KernelActive;
 
 /** number of tasks created so far */
 volatile static unsigned int Tasks;
+
+static int kernel_request_retval;
+
+static uint8_t current_periodic_finished = 0;
+
+/** The ready queue for RR tasks. Their scheduling is round-robin. */
+static Q rr_queue;
+
+/** The ready queue for SYSTEM tasks. Their scheduling is first come, first served. */
+static Q system_queue;
+
+/** An array of queues for tasks waiting on events. */
+static Q event_queue[MAXEVENT];
 
 /**
  * When creating a new task, it is important to initialize its stack just like
@@ -214,10 +241,39 @@ void Kernel_Create_Task_At(PD *p, voidfuncptr f, int arg, unsigned int level, un
     p->level = level;
     p->name = name;
     p->request = NONE;
-
     p->state = READY;
 }
 
+static void enqueue(Q* queue_ptr, PD* task_to_add)
+{
+    task_to_add->next = NULL;
+
+    if(queue_ptr->head == NULL)
+    {
+        /* empty queue */
+        queue_ptr->head = task_to_add;
+        queue_ptr->tail = task_to_add;
+    }
+    else
+    {
+        /* put task at the back of the queue */
+        queue_ptr->tail->next = task_to_add;
+        queue_ptr->tail = task_to_add;
+    }
+}
+
+static PD* dequeue(Q* queue_ptr)
+{
+    volatile PD* task_ptr = queue_ptr->head;
+
+    if(queue_ptr->head != NULL)
+    {
+        queue_ptr->head = queue_ptr->head->next;
+        task_ptr->next = NULL;
+    }
+
+    return task_ptr;
+}
 
 /**
   *  Create a new task
@@ -244,18 +300,20 @@ static void Kernel_Create_Task(voidfuncptr f, int arg, unsigned int level, unsig
   */
 static void Dispatch()
 {
-    /* find the next READY task
-      * Note: if there is no READY task, then this will loop forever!.
-      */
-    while(Process[NextP].state != READY) {
-        NextP = (NextP + 1) % MAXPROCESS;
+    if(system_queue.head != NULL)
+    {
+        Cp = dequeue(&system_queue);
+    }
+    else if(rr_queue.head != NULL)
+    {
+        Cp = dequeue(&rr_queue);
+    }
+    else
+    {
+        Cp = idle_task;
     }
 
-    Cp = &(Process[NextP]);
-    CurrentSp = Cp->sp;
     Cp->state = RUNNING;
-
-    NextP = (NextP + 1) % MAXPROCESS;
 }
 
 /**
@@ -285,11 +343,30 @@ static void Next_Kernel_Request()
         switch(Cp->request){
             case CREATE:
                 Kernel_Create_Task(Cp->code, Cp->arg, Cp->level, Cp->name);
+
+                /* enqueue READY RR tasks. */
+                if(Cp->level == RR && Cp->state == READY)
+                {
+                    enqueue(&rr_queue, Cp);
+                }
+
                 break;
-            case NEXT:
             case NONE:
-                /* NONE could be caused by a timer interrupt */
+            case NEXT:
                 Cp->state = READY;
+                switch(Cp->level){
+                    case SYSTEM:
+                        enqueue(&system_queue, Cp);
+                        break;
+                    case PERIODIC:
+                        current_periodic_finished = 1;
+                        break;
+                    case RR:
+                        enqueue(&rr_queue, Cp);
+                        break;
+                    default:
+                        break;
+                }
                 Dispatch();
                 break;
             case TERMINATE:
@@ -362,7 +439,6 @@ int Task_Create(void (*f)(void), int arg, unsigned int level, unsigned int name)
         Cp->name = name;
         Enter_Kernel();
     } else {
-        /* call the RTOS function directly */
         Kernel_Create_Task(f, arg, level, name);
     }
 
@@ -394,11 +470,6 @@ void Task_Terminate()
         /* never returns here! */
     }
 }
-
-/******
- * Rudimentary round-robin Scheduling
- */
-volatile uint16_t timer_millis = 0;
 
 void setupTimer()
 {
