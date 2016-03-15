@@ -402,23 +402,16 @@ volatile uint16_t timer_millis = 0;
 
 void setupTimer()
 {
-    OCR1A = 0x3D08;
-
-    TCCR1B |= (1 << WGM12);
-    // Mode 4, CTC on OCR1A
-
-    TIMSK1 |= (1 << OCIE1A);
-    //Set interrupt on compare match
-
-    TCCR1B |= (1 << CS12) | (1 << CS10);
-    // set prescaler to 1024 and start the timer
-
+    TCCR0A = (1<<WGM01); //Set CTC bit
+    OCR0A = 156;//Output compare register
+    TIMSK0 = (1<<OCIE0A);
+    TCCR0B = (1<<CS02) | (1<<CS00);
 
     sei();
     // enable interrupts
 }
 
-ISR(TIMER1_COMPA_vect)
+ISR(TIMER0_COMPA_vect)
 {
     PORTL = 0x00;
     asm("jmp Task_Next"::);
