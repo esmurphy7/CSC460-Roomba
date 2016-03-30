@@ -17,18 +17,20 @@ void Roomba_Init()
 
 	uart_init(UART_19200);
 
-//	// Send DD start sequence
-//	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
-//	delay(300);
-//	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
-//	delay(300);
-//	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
-//	delay(300);
-//	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
-//	delay(300);
-//	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
-//	delay(300);
-//	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
+	/*
+	// Send DD start sequence
+	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
+	delay(300);
+	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
+	delay(300);
+	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
+	delay(300);
+	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
+	delay(300);
+	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
+	delay(300);
+	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
+	*/
 
 	// Try to start the SCI
 	uart_putchar(START);

@@ -8,8 +8,8 @@
 void Task_P1()
 {
     for(;;){
-        Roomba_Drive(30, 2375);
-        _delay_ms(50);
+        Roomba_Drive(321, 765);
+        _delay_ms(20);
     }
 
     for(;;){};
