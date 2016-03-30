@@ -1,7 +1,11 @@
+#include "LED_Test.h"
+#include <avr/io.h>
+#include <util/delay.h>
+#include <avr/interrupt.h>
 #include "os.h"
 //
 // LAB - TEST 4
-//	Noah Spriggs, Murray Dunne, Daniel McIlvaney
+//  Noah Spriggs, Murray Dunne, Daniel McIlvaney
 //
 // EXPECTED RUNNING ORDER: P0,P1,P2,P3,TIMER,P0,P1,P2
 //
@@ -10,32 +14,30 @@
 // P2     wait 2
 // P3            timer->signal 3
 
-MUTEX mut;
 EVENT evt1;
 EVENT evt2;
 EVENT evt3;
 
 void Task_P0(int parameter)
 {
-	for(;;)
-	{
-		Event_Wait(evt3);
-		Event_Signal(evt2);
-		Event_Signal(evt1);		
-	}
+    for(;;)
+    {
+        Event_Wait(evt3);
+        Event_Signal(evt2);
+        Event_Signal(evt1);
+    }
 }
 
 void Task_P1(int parameter)
 {
-	Event_Wait(evt1);
-    Task_Terminate();
-    for(;;);
+    for(;;) {
+        Event_Wait(evt1);
+    }
 }
 
 void Task_P2(int parameter)
 {
-	Event_Wait(evt2);
-    Task_Terminate();
+    Event_Wait(evt2);
     for(;;);
 }
 
@@ -76,34 +78,28 @@ ISR(TIMER3_COMPA_vect)
     timer_handler();
 }
 
-void a_main(int parameter)
+void a_main()
 {
-	/*
-	//Place these as necessary to display output if not already doing so inside the RTOS
-	//initialize pins
-	DDRB |= (1<<PB1);	//pin 52
-	DDRB |= (1<<PB2);	//pin 51	
-	DDRB |= (1<<PB3);	//pin 50
-	
-	
-	PORTB |= (1<<PB1);	//pin 52 on
-	PORTB |= (1<<PB2);	//pin 51 on
-	PORTB |= (1<<PB3);	//pin 50 on
-
-
-	PORTB &= ~(1<<PB1);	//pin 52 off
-	PORTB &= ~(1<<PB2);	//pin 51 off
-	PORTB &= ~(1<<PB3);	//pin 50 off
-
-	*/
-	evt1 = Event_Init();
+    evt1 = Event_Init();
     evt2 = Event_Init();
     evt3 = Event_Init();
 
-	Task_Create(Task_P1, 1, 0);
-	Task_Create(Task_P2, 2, 0);
-	Task_Create(Task_P0, 0, 0);
-	Task_Create(Task_P3, 3, 0);
-	
-    configure_timer();
+    Task_Create(Task_P1, 1, 0);
+    Task_Create(Task_P2, 2, 0);
+    Task_Create(Task_P0, 0, 0);
+    Task_Create(Task_P3, 3, 0);
+
+    // configure_timer();
+
+    disable_LED(PORTL0);
+    disable_LED(PORTL2);
+    disable_LED(PORTL1);
+    disable_LED(PORTL5);
+    disable_LED(PORTL6);
+
+
+    enable_LED(PORTL1);
+    disable_LED(PORTL1);
+
+    Task_Terminate();
 }
