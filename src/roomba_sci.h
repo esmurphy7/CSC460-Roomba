@@ -97,11 +97,9 @@ typedef enum _cs
 } ROOMBA_CHARGING_STATE;
 
 
-//DD/Baud pin on digital 20.
-#define ROOMBA_DD_PORT	PORTD
-#define ROOMBA_DD_PIN	PD1
-#define ROOMBA_DD_DDR	DDRD
-
-
+//DD/Baud pin on digital 13.
+#define ROOMBA_DD_PORT	PORTB
+#define ROOMBA_DD_PIN	PB7
+#define ROOMBA_DD_DDR	DDRB
 
 #endif /* ROOMBA_SCI_H_ */

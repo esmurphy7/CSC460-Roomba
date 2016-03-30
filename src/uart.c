@@ -42,14 +42,17 @@ void uart_init(UART_BPS bitrate){
 	/* Set baud rate */
 	UBRR0H = 0;
 	switch (bitrate) {
-    case UART_38400:
-	    UBRR0L = 12;
-		break;
-    case UART_57600:
-        UBRR0L = 6;
-        break;
-    default:
-        UBRR0L = 6;
+    	case UART_38400:
+		    UBRR0L = 12;
+			break;
+    	case UART_57600:
+    	    UBRR0L = 6;
+    	    break;
+    	case UART_19200:
+    	    UBRR0L = 51;
+    	    break;
+    	default:
+    	    UBRR0L = 51;
     }
 
 	/* Enable receiver and transmitter */
