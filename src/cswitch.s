@@ -23,7 +23,8 @@
 SREG  = 0x3F
 SPH    = 0x3E
 SPL    = 0x3D
-EIND   = 0X3C
+
+EIND   = 0x3C
 
 /*
   * MACROS
@@ -66,20 +67,20 @@ EIND   = 0X3C
 	push	r28
 	push	r29
 	push	r30
-  push    r31
-  in      r31, EIND
-  push    r31
-  in      r31, SREG
-  push    r31
+	push	r31
+	in	r16, SREG
+	push	r16
+  in r16, EIND
+  push r16
 .endm
 ;
 ; Pop all registers and the status registers
 ;
 .macro	RESTORECTX
-  pop r31
-  out SREG, r31
-  pop r31
-  out EIND, r31
+  pop r16
+  out EIND, r16
+	pop	r16
+	out	SREG,r16
 	pop	r31
 	pop	r30
 	pop	r29
@@ -163,6 +164,7 @@ Exit_Kernel:
           * Note: at the bottom of the Cp's context is its return address.
           */
         RESTORECTX
+        
         reti         /* re-enable all global interrupts */
 /*
   * All system call eventually enters here!
