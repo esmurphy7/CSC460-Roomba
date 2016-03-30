@@ -114,15 +114,13 @@ void timer_handler()
     Event_Signal(evt3);
 }
 
-ISR(TIMER3_COMPA_vect)
-        {
-                TIMSK3 &= ~(1<<OCIE3A);
+ISR(TIMER3_COMPA_vect) {
+        TIMSK3 &= ~(1<<OCIE3A);
         timer_handler();
-        }
+}
 
 void a_main(int parameter)
 {
-    /*
     //Place these as necessary to display output if not already doing so inside the RTOS
     //initialize pins
     DDRB |= (1<<PB1); //pin 52
@@ -139,12 +137,13 @@ void a_main(int parameter)
     PORTB &= ~(1<<PB2); //pin 51 off
     PORTB &= ~(1<<PB3); //pin 50 off
 
-    */ DDRL |= (1<<PL0); //pin 49
+    DDRL |= (1<<PL0); //pin 49
     DDRL |= (1<<PL1); //pin 48
     DDRB |= (1<<PB0); //pin 53
     DDRB |= (1<<PB1); //pin 52
     DDRB |= (1<<PB2); //pin 51
     DDRB |= (1<<PB3); //pin 50
+
     evt1 = Event_Init();
     evt2 = Event_Init();
     evt3 = Event_Init();
