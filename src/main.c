@@ -8,8 +8,8 @@
 void Task_P1()
 {
     for(;;){
-        Roomba_Drive(321, 765);
-        _delay_ms(20);
+        Roomba_Drive(-150, 32768);
+        _delay_ms(10000);
     }
 
     for(;;){};
@@ -29,6 +29,10 @@ void Idle() {
 
 void a_main()
 {
+    enable_LED(PORTL0);
+    disable_LED(PORTL0);
+
+
     Roomba_Init();
 
     Task_Create(Task_P1, 1, 0);
@@ -40,9 +44,6 @@ void a_main()
     disable_LED(PORTL2);
     disable_LED(PORTL5);
     disable_LED(PORTL6);
-
-    enable_LED(PORTL0);
-    disable_LED(PORTL0);
 
     Task_Terminate();
 }

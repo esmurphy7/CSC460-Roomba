@@ -12,33 +12,36 @@
 
 void Roomba_Init()
 {
+	cli();
+
 	ROOMBA_DD_DDR |= 1<<ROOMBA_DD_PIN;
-	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
 
-	uart_init(UART_19200);
+    ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
 
-	/*
+	_delay_ms(2000);
+
 	// Send DD start sequence
 	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
-	delay(300);
+	_delay_ms(300);
 	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
-	delay(300);
+	_delay_ms(300);
 	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
-	delay(300);
+	_delay_ms(300);
 	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
-	delay(300);
+	_delay_ms(300);
 	ROOMBA_DD_PORT &= ~(1<<ROOMBA_DD_PIN);
-	delay(300);
+	_delay_ms(300);
 	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
-	*/
+    sei();
 
-	// Try to start the SCI
+    uart_init(UART_19200);
+
+    // Try to start the SCI
 	uart_putchar(START);
-	_delay_ms(20);
+	_delay_ms(200);
 
-	// finally put the Roomba into safe mode.
-	uart_putchar(SAFE);
-	_delay_ms(20);
+    uart_putchar(SAFE);
+    _delay_ms(20);
 }
 
 void Roomba_Finish() {
