@@ -66,24 +66,22 @@ void uart_init(UART_BPS bitrate){
 	cli();
 
 	// Make sure I/O clock to USART1 is enabled
-	PRR1 &= ~(1 << PRUSART1);
+	PRR0 &= ~(1 << PRUSART0);
 
 	// Set baud rate to 19.2k at fOSC = 16 MHz
-	UBRR1 = 51;
+	UBRR0 = 51;
 
 	// Clear USART Transmit complete flag, normal USART transmission speed
-	UCSR1A = (1 << TXC1) | (0 << U2X1);
+	//UCSR0A = (1 << TXC0) | (0 << U2X0);
 
 	// Enable receiver, transmitter, and rx complete interrupt.
-	UCSR1B = (1<<TXEN1);
+	UCSR0B = (1<<TXEN0);
 	// 8-bit data
-	UCSR1C = ((1<<UCSZ11)|(1<<UCSZ10));
+	UCSR0C = ((1<<UCSZ01)|(1<<UCSZ00));
 	// disable 2x speed
-	UCSR1A &= ~(1<<U2X1);
-
+	UCSR0A &= ~(1<<U2X0);
 
 	SREG = sreg;
-
 }
 
 uint8_t uart_bytes_recv(void)
