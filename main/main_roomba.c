@@ -6,8 +6,12 @@
 #include "../src/roomba.h"
 #include "../src/utils.h"
 
+/*** Digital Pins ***/
+#define LASER_PIN PA0   // digital pin 22
+
 /***** State Variables *******/
-volatile char joystickDirection = 'z';
+volatile char joystickDirection = NONE;
+volatile int buttonState = HIGH; // LOW when button clicked, HIGH when open
 
 /***** Write Functions *****/
 void writeDrive()
@@ -56,6 +60,15 @@ void Task_Bluetooth()
         if (uart_rx > 0)
         {
             joystickDirection = uart1_getchar(0);
+            char button = uart1_getchar(1);
+            if(button == '0')
+            {
+                buttonState = LOW;
+            }
+            else if(button == '1')
+            {
+                buttonState = HIGH;
+            }
             uart_reset_recv();
         }
 
@@ -74,6 +87,22 @@ void Task_Drive()
     };
 }
 
+void Task_UpdateLaser()
+{
+    for(;;)
+    {
+        // if button clicked (LOW) fire laser
+        if (buttonState == LOW)
+        {
+            write_PORTA_HIGH(LASER_PIN);
+        }
+        else
+        {
+            write_PORTA_LOW(LASER_PIN);
+        }
+        Task_Sleep(30);
+    }
+}
 
 void Idle() {
     for(;;) {}
@@ -86,9 +115,11 @@ void a_main()
 
     Roomba_Init();
 
+    mode_PORTA_OUTPUT(LASER_PIN);
+
     Task_Create(Task_Bluetooth, 1, 0);
     Task_Create(Task_Drive, 2, 0);
-
+    Task_Create(Task_UpdateLaser, 3, 0);
     Task_Create(Idle, 10, 0);
 
     disable_LED(PORTL0);

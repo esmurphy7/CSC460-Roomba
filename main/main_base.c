@@ -11,18 +11,23 @@
 #define JOYSTICK_MAX 1023
 
 /*** Analog Pins ***/
-#define JOYSTICK_PIN_HORZ PF0   // analog pin 0
-#define JOYSTICK_PIN_VERT PF1   // analog pin 1
+#define JOYSTICK_PIN_HORZ   PF0   // analog pin 0
+#define JOYSTICK_PIN_VERT   PF1   // analog pin 1
+
+/*** Digital Pins ***/
+#define JOYSTICK_PIN_BUTTON PA0   // digital pin 22
 
 /***** State Variables *******/
-volatile char joystickDirection = 'z';
-
+volatile char joystickDirection = NONE;
+volatile int buttonState = HIGH;    // LOW when button clicked, HIGH when open
 
 /***** Core System Tasks *****/
 void Task_WriteBluetooth()
 {
     for(;;){
         uart1_putchar(joystickDirection);
+        buttonState ? uart1_putchar('1') : uart1_putchar('0');
+        uart1_putchar('\n');
         Task_Sleep(10);
     }
 }
@@ -30,7 +35,11 @@ void Task_WriteBluetooth()
 
 void Task_ReadJoystick()
 {
-    for(;;){
+    for(;;)
+    {
+        // update the joystick button state
+        buttonState = read_PORTA(JOYSTICK_PIN_BUTTON) ? LOW : HIGH;
+
         // Read the joystick analog value and save the corresponding direction to joystickDirection, n, e, s, w, and 0 for stop
         int joy_horz = read_ADC(JOYSTICK_PIN_HORZ);
         int joy_vert = read_ADC(JOYSTICK_PIN_VERT);
@@ -82,8 +91,10 @@ void a_main()
 
     // setup analog pins
     init_ADC();
+
     mode_PORTA_INPUT(JOYSTICK_PIN_HORZ);
     mode_PORTA_INPUT(JOYSTICK_PIN_VERT);
+    mode_PORTA_INPUT(JOYSTICK_PIN_BUTTON);
 
     Roomba_Init();
 
