@@ -6,9 +6,9 @@ void pulse_pin(int count)
 {
     for(int i = 0; i < count; i ++) {
         enable_LED(PORTL0);
-        _delay_ms(1);
+        _delay_us(250);
         disable_LED(PORTL0);
-        _delay_ms(1);
+        _delay_us(250);
     }
 }
 

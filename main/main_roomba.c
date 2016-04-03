@@ -47,11 +47,10 @@ void Task_Bluetooth()
 {
     for(;;){
         pulse_pin(1);
-        _delay_ms(5);
 
         if (uart_rx > 0)
         {
-            joystickDirection = uart_getchar(0);
+            joystickDirection = uart1_getchar(0);
             uart_reset_recv();
         }
 
@@ -63,6 +62,8 @@ void Task_Bluetooth()
 void Task_Drive()
 {
     for(;;){
+        pulse_pin(2);
+
         writeDrive();
         Task_Sleep(300);
     };

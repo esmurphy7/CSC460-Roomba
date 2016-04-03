@@ -391,12 +391,18 @@ static void Kernel_Unlock_Mutex() {
 			// For testing
 			if (Cp->p <= 1) {
 				enable_LED(PORTL2);
+				disable_LED(PORTL5);
+				disable_LED(PORTL6);
 			}
 			else if (Cp->p == 2) {
 				enable_LED(PORTL5);
+				disable_LED(PORTL2);
+				disable_LED(PORTL6);
 			}
 			else if (Cp->p == 3) {
 				enable_LED(PORTL6);
+				disable_LED(PORTL2);
+				disable_LED(PORTL5);
 			}
 		}
 		else {
