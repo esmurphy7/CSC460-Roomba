@@ -1,3 +1,4 @@
+void pulse_pin(int count)
 void init_LED_PORTL_pin0(void);
 void init_LED_PORTL_pin2(void);
 void init_LED_PORTL_pin1(void);

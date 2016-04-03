@@ -1,6 +1,16 @@
 #include <avr/io.h>
 #include "LED_Test.h"
 
+void pulse_pin(int count)
+{
+    for(int i = 0; i < count; i ++) {
+        enable_LED(PORTL0);
+        _delay_ms(1);
+        disable_LED(PORTL0);
+        _delay_ms(1);
+    }
+}
+
 void init_LED_PORTL_pin0(void) {
     DDRL |= _BV(DDL0);
 }

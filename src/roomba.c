@@ -6,7 +6,8 @@
  */
 
 #include <util/delay.h>
-#include "uart.h"
+#include <avr/io.h>
+#include <avr/interrupt.h>
 #include "roomba.h"
 #include "roomba_sci.h"
 
@@ -34,7 +35,8 @@ void Roomba_Init()
 	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
     sei();
 
-    uart_init(UART_19200);
+    uart_init();
+    uart1_init();
 
     // Try to start the SCI
 	uart_putchar(START);

@@ -1,6 +1,7 @@
 #include "LED_Test.h"
 #include <avr/io.h>
 #include <util/delay.h>
+#include "uart.h"
 #include "os.h"
 
 #include "roomba.h"
@@ -8,19 +9,35 @@
 void Task_P1()
 {
     for(;;){
-        Roomba_Drive(-150, 32768);
-        _delay_ms(10000);
-    }
 
-    for(;;){};
+        pulse_pin(1);
+        _delay_ms(5);
+
+        if (uart_rx > 0)
+        {
+            int x = uart_bytes_recv();
+
+            pulse_pin(x);
+
+            for(int i = 0; i < x; i++) {
+                uart1_putchar(uart_getchar(i));
+            }
+
+            uart1_putchar('\r');           // Send carriage return
+            uart1_putchar('\n');           // Send linefeed
+            uart_reset_recv();
+        }
+
+        _delay_ms(100);
+    }
 }
 
 
 void Task_P2()
 {
-//    Roomba_Drive(100, 100);
+    for(;;){
 
-    for(;;){};
+    };
 }
 
 void Idle() {
@@ -31,7 +48,6 @@ void a_main()
 {
     enable_LED(PORTL0);
     disable_LED(PORTL0);
-
 
     Roomba_Init();
 
