@@ -104,3 +104,12 @@ void Roomba_Drive(int16_t velocity, int16_t radius )
 	uart_putchar(HIGH_BYTE(radius));
 	uart_putchar(LOW_BYTE(radius));
 }
+
+void Roomba_Direct_Drive(int16_t right_velocity, int16_t left_velocity)
+{
+	uart_putchar(DIRECT_DRIVE);
+	uart_putchar(HIGH_BYTE(right_velocity));
+	uart_putchar(LOW_BYTE(right_velocity));
+	uart_putchar(HIGH_BYTE(left_velocity));
+	uart_putchar(LOW_BYTE(left_velocity));
+}

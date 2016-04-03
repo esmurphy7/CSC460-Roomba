@@ -83,4 +83,4 @@ add_custom_target(
 
 add_executable(CSC460-Roomba
         src/main.c
-)
+        src/utils.cpp src/utils.h)

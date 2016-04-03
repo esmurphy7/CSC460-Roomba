@@ -51,4 +51,7 @@ void Roomba_UpdateSensorPacket(ROOMBA_SENSOR_GROUP group, roomba_sensor_data_t* 
  */
 void Roomba_Drive( int16_t velocity, int16_t radius );
 
+// Drive the roomba using its individual wheels via the DIRECT_DRIVE command
+void Roomba_Direct_Drive(int16_t right_velocity, int16_t left_velocity);
+
 #endif /* ROOMBA_H_ */
