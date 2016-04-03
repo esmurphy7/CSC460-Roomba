@@ -113,7 +113,6 @@ void uart1_init(){
 	// Make sure I/O clock to USART1 is enabled
 	PRR1 &= ~(1 << PRUSART1);
 
-	// Set baud rate to 19.2k at fOSC = 16 MHz
 	UBRR1 = 103;
 
 	// Clear USART Transmit complete flag, normal USART transmission speed
