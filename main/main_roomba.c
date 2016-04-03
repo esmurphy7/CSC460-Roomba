@@ -4,9 +4,10 @@
 #include "../src/uart.h"
 #include "../src/os.h"
 #include "../src/roomba.h"
+#include "../src/utils.h"
 
 /***** State Variables *******/
-volatile char joystickDirection = '0';
+volatile char joystickDirection = 'z';
 
 /***** Write Functions *****/
 void writeDrive()
@@ -15,21 +16,25 @@ void writeDrive()
     int16_t left_wheel;
     switch(joystickDirection)
     {
-        case 'n':
+        case NORTH:
             right_wheel = 100;
             left_wheel = 100;
             break;
-        case 's':
+        case SOUTH:
             right_wheel = -100;
             left_wheel = -100;
             break;
-        case 'e':
+        case EAST:
+            right_wheel = -50;
+            left_wheel = 50;
+            break;
+        case WEST:
             right_wheel = 50;
             left_wheel = -50;
             break;
-        case 'w':
-            right_wheel = -50;
-            left_wheel = 50;
+        case NONE:
+            right_wheel = 0;
+            left_wheel = 0;
             break;
         default:
             right_wheel = 0;
