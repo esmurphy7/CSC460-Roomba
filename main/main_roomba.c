@@ -70,7 +70,7 @@ void Task_Drive()
         pulse_pin(2);
 
         writeDrive();
-        Task_Sleep(300);
+        Task_Sleep(30);
     };
 }
 

@@ -66,7 +66,7 @@ void Task_ReadJoystick()
             joystickDirection = EAST;
         }
 
-        Task_Sleep(300);
+        Task_Sleep(30);
     }
 }
 
