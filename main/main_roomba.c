@@ -6,12 +6,19 @@
 #include "../src/roomba.h"
 #include "../src/utils.h"
 
+/*** Conatants ***/
+#define HIT_THRESHOLD 200   // the threshold of light sensor value that should register a hit
+
+/*** Analog Pins ***/
+#define LIGHT_SENSOR_PIN PF0  // analog pin 0
+
 /*** Digital Pins ***/
 #define LASER_PIN PA0   // digital pin 22
 
 /***** State Variables *******/
 volatile char joystickDirection = NONE;
 volatile int buttonState = HIGH; // LOW when button clicked, HIGH when open
+volatile bool hitState = HIGH;     // HIGH when light sensor reads hit, LOW when not
 
 /***** Write Functions *****/
 void writeDrive()
@@ -76,7 +83,6 @@ void Task_Bluetooth()
     }
 }
 
-
 void Task_Drive()
 {
     for(;;){
@@ -104,6 +110,24 @@ void Task_UpdateLaser()
     }
 }
 
+void Task_DetectHit()
+{
+    for(;;)
+    {
+        // check if the roomba should register a hit or not based on light sensor
+        int lightVal = read_ADC(LIGHT_SENSOR_PIN);
+        if(lightVal > HIT_THRESHOLD)
+        {
+            hitState = HIGH;
+        }
+        else
+        {
+            hitState = LOW;
+        }
+        Task_Sleep(30);
+    }
+}
+
 void Idle() {
     for(;;) {}
 }
@@ -115,11 +139,15 @@ void a_main()
 
     Roomba_Init();
 
+    // setup pins
+    init_ADC();
+    mode_PORTA_INPUT(LIGHT_SENSOR_PIN);
     mode_PORTA_OUTPUT(LASER_PIN);
 
     Task_Create(Task_Bluetooth, 1, 0);
     Task_Create(Task_Drive, 2, 0);
     Task_Create(Task_UpdateLaser, 3, 0);
+    Task_Create(Task_DetectHit, 4, 0);
     Task_Create(Idle, 10, 0);
 
     disable_LED(PORTL0);
