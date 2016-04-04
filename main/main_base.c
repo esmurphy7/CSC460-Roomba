@@ -11,24 +11,32 @@
 #define JOYSTICK_MAX 1023
 
 /*** Analog Pins ***/
-#define JOYSTICK_PIN_HORZ   PF0   // analog pin 0
-#define JOYSTICK_PIN_VERT   PF1   // analog pin 1
+#define JOYSTICK_PIN_X   PF0   // analog pin 0
+#define JOYSTICK_PIN_Y   PF1   // analog pin 1
 #define JOYSTICK_PIN_BUTN   PF2   // analog pin 2
 
-/*** Digital Pins ***/
-#define JOYSTICK_PIN_BUTTON PA0   // digital pin 22
-
 /***** State Variables *******/
-volatile char joystickDirection = NONE;
+volatile int16_t rightWheelSpeed = ROOMBA_WHEEL_CENTER;
+volatile int16_t leftWheelSpeed = ROOMBA_WHEEL_CENTER;
 volatile int buttonState = HIGH;    // LOW when button clicked, HIGH when open
 
 /***** Core System Tasks *****/
 void Task_WriteBluetooth()
 {
-    for(;;){
-        uart1_putchar(joystickDirection);
+    for(;;)
+    {
+        // send the wheel speeds over uart1
+        uart1_putchar(HIGH_BYTE(rightWheelSpeed));
+        uart1_putchar(LOW_BYTE(rightWheelSpeed));
+        uart1_putchar(HIGH_BYTE(leftWheelSpeed));
+        uart1_putchar(LOW_BYTE(leftWheelSpeed));
+
+        // send the button state over uart1
         uart1_putchar(buttonState);
+
+        // send end-of-transmission char over uart1
         uart1_putchar('\n');
+
         Task_Sleep(5);
     }
 }
@@ -41,45 +49,66 @@ void Task_ReadJoystick()
         // The button reads ~0 when pushed, and anything from 10 to 1024 when released
         buttonState = (read_ADC(JOYSTICK_PIN_BUTN) < 10) ? '1' : '0' ;
 
-        // Read the joystick analog value and save the corresponding direction to joystickDirection, n, e, s, w, and 0 for stop
-        int joy_horz = read_ADC(JOYSTICK_PIN_HORZ);
-        int joy_vert = read_ADC(JOYSTICK_PIN_VERT);
+        // Read the joystick analog values
+        int x_axis = read_ADC(JOYSTICK_PIN_X);
+        int y_axis = read_ADC(JOYSTICK_PIN_Y);
 
-        /* map joystick values to:
-        *   0 (west or north), 1 (middle), or 2 (east or south)
-        */
-        int dir_horz = map(joy_horz, JOYSTICK_MIN, JOYSTICK_MAX, 0, 2);
-        int dir_vert = map(joy_vert, JOYSTICK_MIN, JOYSTICK_MAX, 0, 2);
+        // a joystick within a certain range of the origin is centered (ignore it)
+        const int CENTER_MIN = 510;
+        const int CENTER_MAX = 530;
+        if (x_axis < CENTER_MIN || x_axis > CENTER_MAX)
+        {
+            if (y_axis < CENTER_MIN || y_axis > CENTER_MAX)
+            {
+                // Map values from joystick to a range for the roomba to handle
+                x_axis = map(x_axis, JOYSTICK_MIN, JOYSTICK_MAX, ROOMBA_WHEEL_MIN, ROOMBA_WHEEL_MAX);
+                // joystick y axis: up = min, down = max. Invert it to match the roomba
+                y_axis = map(y_axis, JOYSTICK_MAX, JOYSTICK_MIN, ROOMBA_WHEEL_MIN, ROOMBA_WHEEL_MAX);
 
-        // horizontal directions take precedence over vertical
-        if(dir_horz == 0)
-        {
-            joystickDirection = WEST;
+                int ly_axis = y_axis;
+                int ry_axis = y_axis;
+
+                // with the joystick values converted to roomba wheel values, ignore centered values again
+                const int WHEEL_CENTER_MIN = -10;
+                const int WHEEL_CENTER_MAX = 10;
+
+                if (x_axis < WHEEL_CENTER_MIN) { // turning left, so slow-down left wheel
+                    if (y_axis > WHEEL_CENTER_MAX) { // moving forward
+                        ly_axis -= (ROOMBA_WHEEL_MAX - x_axis); // decreasing the value - moving it closer to the center-point - slows it down
+                    }
+
+                    if (y_axis < WHEEL_CENTER_MIN) { // moving in reverse
+                        ly_axis += (ROOMBA_WHEEL_MAX - x_axis); // increasing the value - moving it closer to the center-point - slows it down
+                    }
+                }
+
+                if (x_axis > WHEEL_CENTER_MAX) { // turning right, so slow-down right wheel
+                    if (y_axis > WHEEL_CENTER_MAX) { // moving forward
+                        ry_axis -= (ROOMBA_WHEEL_MAX - x_axis); // decreasing the value - moving it closer to the center-point - slows it down
+                    }
+
+                    if (y_axis < WHEEL_CENTER_MIN) { // moving in reverse
+                        ry_axis += (ROOMBA_WHEEL_MAX - x_axis); // increasing the value - moving it closer to the center-point - slows it down
+                    }
+                }
+
+                // set the state variables
+                rightWheelSpeed = ry_axis;
+                leftWheelSpeed = ly_axis;
+            }
         }
-        else if(dir_horz == 1)
-        {
-            if(dir_vert == 0)
-            {
-                joystickDirection = NORTH;
+
+        // center both values if the joystick is centered (bringing both wheels to a stop)
+        if (x_axis >= CENTER_MIN || x_axis <= CENTER_MAX) {
+            if (y_axis >= CENTER_MIN || y_axis <= CENTER_MAX) {
+                rightWheelSpeed = ROOMBA_WHEEL_CENTER;
+                leftWheelSpeed = ROOMBA_WHEEL_CENTER;
             }
-            else if(dir_vert == 1)
-            {
-                joystickDirection = NONE;
-            }
-            else if(dir_vert == 2)
-            {
-                joystickDirection = SOUTH;
-            }
-        }
-        else if(dir_horz == 2)
-        {
-            joystickDirection = EAST;
         }
 
         Task_Sleep(5);
     }
 }
-
 
 void Idle() {
     for(;;) {}
@@ -95,8 +124,9 @@ void a_main()
     uart_init();
     uart1_init();
     init_ADC();
-    mode_PORTA_INPUT(JOYSTICK_PIN_HORZ);
-    mode_PORTA_INPUT(JOYSTICK_PIN_VERT);
+    mode_PORTA_INPUT(JOYSTICK_PIN_X);
+    mode_PORTA_INPUT(JOYSTICK_PIN_Y);
+    mode_PORTA_INPUT(JOYSTICK_PIN_BUTN);
     DDRA = 0xFF;
 
     disable_LED(PORTL0);

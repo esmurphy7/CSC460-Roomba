@@ -5,6 +5,11 @@ typedef int bool;
 #define HIGH 0x1
 #define LOW 0x0
 
+/*** Roomba Values ***/
+#define ROOMBA_WHEEL_MAX 500    // mm/s
+#define ROOMBA_WHEEL_MIN -500   // mm/s
+#define ROOMBA_WHEEL_CENTER 0
+
 /*** Joystick Directions ***/
 #define NORTH 'n'
 #define SOUTH 's'
