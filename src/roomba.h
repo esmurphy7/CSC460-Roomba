@@ -54,4 +54,10 @@ void Roomba_Drive( int16_t velocity, int16_t radius );
 // Drive the roomba using its individual wheels via the DIRECT_DRIVE command
 void Roomba_Direct_Drive(int16_t right_velocity, int16_t left_velocity);
 
+// Send a STOP command to the roomba
+void Roomba_Stop();
+
+// Send a CLEAN command to the roomba
+void Roomba_Clean();
+
 #endif /* ROOMBA_H_ */

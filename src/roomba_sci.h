@@ -21,7 +21,7 @@
 #define FULL	132		// enter full mode
 #define POWER	133		// put the Roomba to sleep
 //#define SPOT	134		// start spot cleaning cycle
-//#define CLEAN	135		// start normal cleaning cycle
+#define CLEAN	135		// start normal cleaning cycle
 //#define MAX		136		// start maximum time cleaning cycle
 #define DRIVE	137		// control wheels
 #define LEDS	139		// activate LEDs

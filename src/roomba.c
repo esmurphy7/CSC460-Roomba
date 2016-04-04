@@ -110,3 +110,13 @@ void Roomba_Direct_Drive(int16_t right_velocity, int16_t left_velocity)
 	uart_putchar(HIGH_BYTE(left_velocity));
 	uart_putchar(LOW_BYTE(left_velocity));
 }
+
+void Roomba_Stop()
+{
+	uart_putchar(STOP);
+}
+
+void Roomba_Clean()
+{
+	uart_putchar(CLEAN);
+}
