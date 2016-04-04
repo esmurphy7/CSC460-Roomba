@@ -8,7 +8,7 @@
 #include "../src/utils.h"
 
 /*** Conatants ***/
-#define HIT_THRESHOLD 200   // the threshold of light sensor value that should register a hit
+#define HIT_THRESHOLD 200   // light sensor values read above this should register a hit
 
 /*** Analog Pins ***/
 #define LIGHT_SENSOR_PIN PF0  // analog pin 0
@@ -25,45 +25,15 @@ enum States
 };
 
 volatile int systemState = 2;
-volatile char joystickDirection = NONE;
+volatile int16_t rightWheelSpeed = ROOMBA_WHEEL_CENTER;
+volatile int16_t leftWheelSpeed = ROOMBA_WHEEL_CENTER;
 volatile char buttonState = '0';
 volatile bool hitState = LOW;     // HIGH when light sensor reads hit, LOW when not
 
 /***** Write Functions *****/
 void writeDrive()
 {
-    int16_t right_wheel;
-    int16_t left_wheel;
-
-    switch(joystickDirection)
-    {
-        case NORTH:
-            right_wheel = 100;
-            left_wheel = 100;
-            break;
-        case SOUTH:
-            right_wheel = -100;
-            left_wheel = -100;
-            break;
-        case EAST:
-            right_wheel = -50;
-            left_wheel = 50;
-            break;
-        case WEST:
-            right_wheel = 50;
-            left_wheel = -50;
-            break;
-        case NONE:
-            right_wheel = 0;
-            left_wheel = 0;
-            break;
-        default:
-            right_wheel = 0;
-            left_wheel = 0;
-            break;
-    }
-
-    Roomba_Direct_Drive(right_wheel, left_wheel);
+    Roomba_Direct_Drive(rightWheelSpeed, leftWheelSpeed);
 }
 
 void die()
@@ -84,7 +54,7 @@ void Task_Drive()
 
         if (systemState != SHOT) {
             // Handle system states and act accordingly, joystick input subsumes the cleaning AI
-            if(joystickDirection != NONE) {
+            if(rightWheelSpeed != 0 && leftWheelSpeed != 0) {
                 systemState = MANUAL;
                 writeDrive();
             } else {
@@ -129,13 +99,23 @@ void Task_BtWait()
 {
     for(;;){
         // Wait for a newline, which lets us know that the next char will be useful
-        while (uart1_getchar(0) != '\n') {};
+        while (uart1_getchar() != '\n') {};
 
-        joystickDirection = uart1_getchar(0);
-        buttonState = uart1_getchar(0);
+        // wheel speeds are sent as high and low bytes, in that order, over uart1
+        int8_t rightWheelHigh = uart1_getchar();
+        int8_t rightWheelLow = uart1_getchar();
+
+        int8_t leftWheelHigh = uart1_getchar();
+        int8_t leftWheelLow = uart1_getchar();
+
+        // combine the bytes that were received
+        rightWheelSpeed = (rightWheelHigh << 8) | rightWheelLow;
+        leftWheelSpeed = (leftWheelHigh << 8) | leftWheelLow;
+
+        // read and update the button state
+        buttonState = uart1_getchar();
     }
 }
-
 
 void Idle() {
     for(;;) {}

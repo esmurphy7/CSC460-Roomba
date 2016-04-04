@@ -111,7 +111,7 @@ void uart1_putchar (char c)
 	UDR1 = c;
 }
 
-char uart1_getchar(int index)
+char uart1_getchar()
 {
     while(!(UCSR1A & (1<<RXC1)));
 

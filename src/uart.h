@@ -22,7 +22,7 @@ volatile uint8_t uart1_rx; 		// Flag to indicate uart received a byte
 
 void uart1_init();
 void uart1_putchar(char c);
-char uart1_getchar(int index);
+char uart1_getchar();
 void uart1_putstr(char *s);
 
 uint8_t uart1_bytes_recv(void);
