@@ -4,6 +4,7 @@
 #include "../src/uart.h"
 #include "../src/os.h"
 #include "../src/roomba.h"
+#include "../src/sensor_struct.h"
 #include "../src/utils.h"
 
 /*** Conatants ***/
@@ -16,6 +17,13 @@
 #define LASER_PIN PA0   // digital pin 22
 
 /***** State Variables *******/
+typedef enum States
+{
+    MANUAL = 1,
+    AUTONOMOUS = 2
+} SystemState;
+volatile SystemState systemState;
+volatile bool isRoombaCleaning;
 volatile char joystickDirection = NONE;
 volatile int buttonState = HIGH; // LOW when button clicked, HIGH when open
 volatile bool hitState = HIGH;     // HIGH when light sensor reads hit, LOW when not
@@ -56,6 +64,10 @@ void writeDrive()
     Roomba_Direct_Drive(right_wheel, left_wheel);
 }
 
+void writeStop()
+{
+    Roomba_Stop();
+}
 
 
 /***** Core System Tasks *****/
@@ -67,6 +79,8 @@ void Task_Bluetooth()
         if (uart_rx > 0)
         {
             joystickDirection = uart1_getchar(0);
+
+            // read and update the button state
             char button = uart1_getchar(1);
             if(button == '0')
             {
@@ -77,6 +91,22 @@ void Task_Bluetooth()
                 buttonState = HIGH;
             }
             uart_reset_recv();
+
+            // change state based on joystick input
+            if(joystickDirection != NONE)
+            {
+                systemState = MANUAL;
+                isRoombaCleaning = FALSE;
+            }
+            else
+            {
+                systemState = AUTONOMOUS;
+                if(!isRoombaCleaning)
+                {
+                    Roomba_Clean();
+                    isRoombaCleaning = TRUE;
+                }
+            }
         }
 
         Task_Sleep(10);
@@ -88,7 +118,11 @@ void Task_Drive()
     for(;;){
         pulse_pin(2);
 
-        writeDrive();
+        if(systemState == MANUAL)
+        {
+            writeDrive();
+        }
+
         Task_Sleep(30);
     };
 }
@@ -119,6 +153,7 @@ void Task_DetectHit()
         if(lightVal > HIT_THRESHOLD)
         {
             hitState = HIGH;
+            writeStop();
         }
         else
         {
@@ -127,6 +162,7 @@ void Task_DetectHit()
         Task_Sleep(30);
     }
 }
+
 
 void Idle() {
     for(;;) {}
@@ -138,6 +174,9 @@ void a_main()
     disable_LED(PORTL0);
 
     Roomba_Init();
+
+    systemState = MANUAL;
+    isRoombaCleaning = FALSE;
 
     // setup pins
     init_ADC();
