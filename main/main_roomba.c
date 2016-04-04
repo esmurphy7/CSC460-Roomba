@@ -8,7 +8,7 @@
 #include "../src/utils.h"
 
 /*** Conatants ***/
-#define HIT_THRESHOLD 200   // the threshold of light sensor value that should register a hit
+#define HIT_THRESHOLD 15   // the threshold of light sensor value that should register a hit
 
 /*** Analog Pins ***/
 #define LIGHT_SENSOR_PIN PF0  // analog pin 0
@@ -20,16 +20,21 @@
 enum States
 {
     SHOT = 1,
-    MANUAL = 2,
-    AUTONOMOUS = 3
+    STARTUP = 2,
+    MANUAL = 3,
+    AUTONOMOUS = 4
 };
 
-volatile int systemState = 2;
+volatile int systemState = MANUAL;
 volatile char joystickDirection = NONE;
 volatile char buttonState = '0';
-volatile bool hitState = LOW;     // HIGH when light sensor reads hit, LOW when not
+volatile char hitState = '0';     // HIGH when light sensor reads hit, LOW when not
 
-/***** Write Functions *****/
+volatile char wallSensors = NONE;
+volatile char irSensors = NONE;
+
+volatile int turnTimer = 0;
+
 void writeDrive()
 {
     int16_t right_wheel;
@@ -38,20 +43,20 @@ void writeDrive()
     switch(joystickDirection)
     {
         case NORTH:
-            right_wheel = 100;
-            left_wheel = 100;
+            right_wheel = 300;
+            left_wheel = 300;
             break;
         case SOUTH:
-            right_wheel = -100;
-            left_wheel = -100;
+            right_wheel = -300;
+            left_wheel = -300;
             break;
         case EAST:
-            right_wheel = -50;
-            left_wheel = 50;
+            right_wheel = -150;
+            left_wheel = 150;
             break;
         case WEST:
-            right_wheel = 50;
-            left_wheel = -50;
+            right_wheel = 150;
+            left_wheel = -150;
             break;
         case NONE:
             right_wheel = 0;
@@ -66,38 +71,52 @@ void writeDrive()
     Roomba_Direct_Drive(right_wheel, left_wheel);
 }
 
-void die()
-{
-
-}
 
 /***** Core System Tasks *****/
 void Task_Drive()
 {
     for(;;) {
         // When we're shot, there's nothing more to drive.
-        if (hitState == HIGH) {
+        if (hitState == '1') {
             systemState = SHOT;
-            Roomba_Stop();
+
+            // Turn on LEDs for feedback
+            uart_putchar(139);
+            uart_putchar(1);
+            uart_putchar(255);
+            uart_putchar(255);
+
+//            Roomba_Stop();
             Task_Terminate();
         }
 
-        if (systemState != SHOT) {
-            // Handle system states and act accordingly, joystick input subsumes the cleaning AI
-            if(joystickDirection != NONE) {
-                systemState = MANUAL;
+//        // The startup state assumes manual control/does nothing until the user gives a starting input
+//        if (systemState == STARTUP) {
+//            // In startup, wait for a joystick input to signal the start of a competition
+//            if (joystickDirection != NONE) {
+//                systemState = AUTONOMOUS;
+//            }
+//        }
+
+        switch (systemState) {
+            case AUTONOMOUS:
+                break;
+            case MANUAL:
                 writeDrive();
-            } else {
-                // When the joystick input is clear, set the system into auto mode (do nothing if already there)
-                if(systemState != AUTONOMOUS)
-                {
-                    systemState = AUTONOMOUS;
-                    Roomba_Clean();
-                }
-            }
+                break;
         }
 
-        Task_Sleep(10);
+
+        // After processing the standard drive commands, request a sensor update to be handled and ready for the next
+        // time his task comes around
+        uart_putchar(142);
+        uart_putchar(EXTERNAL);
+
+        // Request the battery voltage to use as the 'start' of a packet.
+        uart_putchar(142);
+        uart_putchar(22);
+
+        Task_Sleep(20);
     };
 }
 
@@ -115,12 +134,13 @@ void Task_UpdatePins()
         int lightVal = read_ADC(LIGHT_SENSOR_PIN);
         if(lightVal > HIT_THRESHOLD)
         {
-            //hitState = HIGH;
+            hitState = '1';
         }
 
         Task_Sleep(10);
     }
 }
+
 
 /**
  * BtWait is a busywait task that listens for uart data
@@ -129,28 +149,12 @@ void Task_BtWait()
 {
     for(;;){
         // Wait for a newline, which lets us know that the next char will be useful
-        while (uart1_getchar(0) != '\n') {};
+        while (uart1_getchar() != '\n') {};
 
         joystickDirection = uart1_getchar();
         buttonState = uart1_getchar();
     }
 }
-
-/**
- * RbWait is a busywait task that listens for roomba uart data
- */
-//void Task_RbWait()
-//{
-//    for(;;){
-//        // Wait for a newline, which lets us know that the next char will be useful
-//        while (uart_getchar() != '\n') {};
-//
-//        joystickDirection = uart1_getchar();
-//        buttonState = uart1_getchar();
-//    }
-//}
-
-
 
 void Idle() {
     for(;;) {}
