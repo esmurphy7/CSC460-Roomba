@@ -11,13 +11,16 @@
 
 /***** State Variables *******/
 volatile char joystickDirection = NONE;
-volatile int buttonState = HIGH; // LOW when button clicked, HIGH when open
+volatile char buttonState = '0';
+
+EVENT updateOutputsEvent = 0;
 
 /***** Write Functions *****/
 void writeDrive()
 {
     int16_t right_wheel;
     int16_t left_wheel;
+
     switch(joystickDirection)
     {
         case NORTH:
@@ -49,58 +52,41 @@ void writeDrive()
     Roomba_Direct_Drive(right_wheel, left_wheel);
 }
 
-
-
 /***** Core System Tasks *****/
-void Task_Bluetooth()
+/**
+ * BtWait is a busywait task that listens for uart data
+ */
+void Task_BtWait()
 {
     for(;;){
-        pulse_pin(1);
+        // Wait for a newline, which lets us know that the next char will be useful
+        while (uart1_getchar(0) != '\n') {};
 
-        if (uart_rx > 0)
-        {
-            joystickDirection = uart1_getchar(0);
-            char button = uart1_getchar(1);
-            if(button == '0')
-            {
-                buttonState = LOW;
-            }
-            else if(button == '1')
-            {
-                buttonState = HIGH;
-            }
-            uart_reset_recv();
-        }
-
-        Task_Sleep(10);
+        joystickDirection = uart1_getchar(0);
+        buttonState = uart1_getchar(0);
     }
 }
-
 
 void Task_Drive()
 {
     for(;;){
-        pulse_pin(2);
-
         writeDrive();
-        Task_Sleep(30);
+
+        Task_Sleep(10);
     };
 }
 
-void Task_UpdateLaser()
+void Task_RefreshOutput()
 {
-    for(;;)
-    {
+    for(;;) {
         // if button clicked (LOW) fire laser
-        if (buttonState == LOW)
-        {
-            write_PORTA_HIGH(LASER_PIN);
+        if (buttonState == '0') {
+            disable_LED(PORTL0);
+        } else {
+            enable_LED(PORTL0);
         }
-        else
-        {
-            write_PORTA_LOW(LASER_PIN);
-        }
-        Task_Sleep(30);
+
+        Task_Sleep(10);
     }
 }
 
@@ -113,13 +99,16 @@ void a_main()
     enable_LED(PORTL0);
     disable_LED(PORTL0);
 
+    uart_init();
+    uart1_init();
+
     Roomba_Init();
 
-    mode_PORTA_OUTPUT(LASER_PIN);
+    Task_Create(Task_Drive, 1, 0);
 
-    Task_Create(Task_Bluetooth, 1, 0);
-    Task_Create(Task_Drive, 2, 0);
-    Task_Create(Task_UpdateLaser, 3, 0);
+    Task_Create(Task_RefreshOutput, 2, 0);
+    Task_Create(Task_BtWait, 3, 0);
+
     Task_Create(Idle, 10, 0);
 
     disable_LED(PORTL0);

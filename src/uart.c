@@ -96,7 +96,7 @@ void uart1_init(){
     UCSR1A = (1 << TXC1) | (0 << U2X1);
 
     // Enable receiver, transmitter, and rx complete interrupt.
-    UCSR1B = (1<<TXEN1) | (1<<RXEN1) | (1<<RXCIE1);
+    UCSR1B = (1<<TXEN1) | (1<<RXEN1) /*| (1<<RXCIE1)*/;
     // 8-bit data
     UCSR1C = ((1<<UCSZ11)|(1<<UCSZ10));
     // disable 2x speed
@@ -107,17 +107,15 @@ void uart1_init(){
 
 void uart1_putchar (char c)
 {
-	while(! (UCSR1A & (1<<UDRE1)));
+	while(!(UCSR1A & (1<<UDRE1)));
 	UDR1 = c;
 }
 
 char uart1_getchar(int index)
 {
-	if (index < UART_BUFFER_SIZE) {
-		return rx1[index];
-	}
+    while(!(UCSR1A & (1<<RXC1)));
 
-	return 0;
+    return UDR1;
 }
 
 void uart1_putstr(char *s)
@@ -137,14 +135,3 @@ void uart1_reset_recv(void)
 	uart1_rx = 0;
 }
 
-/*
- Interrupt Service Routine (ISR):
-*/
-ISR(USART1_RX_vect)
-{
-    while (!(UCSR1A & (1<<RXC1)));
-
-    rx1[rxn1] = UDR1;
-    rxn1 = (rxn1 + 1) % UART_BUFFER_SIZE;
-    uart1_rx = 1;
-}

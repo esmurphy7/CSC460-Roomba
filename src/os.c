@@ -389,21 +389,15 @@ static void Kernel_Unlock_Mutex() {
 
 			// Turn on pin for newly running task
 			// For testing
-			if (Cp->p <= 1) {
-				enable_LED(PORTL2);
-				disable_LED(PORTL5);
-				disable_LED(PORTL6);
-			}
-			else if (Cp->p == 2) {
-				enable_LED(PORTL5);
-				disable_LED(PORTL2);
-				disable_LED(PORTL6);
-			}
-			else if (Cp->p == 3) {
-				enable_LED(PORTL6);
-				disable_LED(PORTL2);
-				disable_LED(PORTL5);
-			}
+//			if (Cp->p <= 1) {
+//				enable_LED(PORTL2);
+//			}
+//			else if (Cp->p == 2) {
+//				enable_LED(PORTL5);
+//			}
+//			else if (Cp->p == 3) {
+//				enable_LED(PORTL6);
+//			}
 		}
 		else {
 			Mutex[i].lockCount = 1;

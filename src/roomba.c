@@ -16,7 +16,6 @@ void Roomba_Init()
 	cli();
 
 	ROOMBA_DD_DDR |= 1<<ROOMBA_DD_PIN;
-
     ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
 
 	_delay_ms(2000);
@@ -34,9 +33,6 @@ void Roomba_Init()
 	_delay_ms(300);
 	ROOMBA_DD_PORT |= 1<<ROOMBA_DD_PIN;
     sei();
-
-    uart_init();
-    uart1_init();
 
     // Try to start the SCI
 	uart_putchar(START);
@@ -95,7 +91,6 @@ void Roomba_UpdateSensorPacket(ROOMBA_SENSOR_GROUP group, roomba_sensor_data_t* 
 		sensor_packet->capacity.bytes.low_byte = uart_getchar(9);
 		break;
 	}
-	uart_reset_receive();
 }
 
 void Roomba_Drive(int16_t velocity, int16_t radius )

@@ -28,7 +28,7 @@ void Task_WriteBluetooth()
         uart1_putchar(joystickDirection);
         buttonState ? uart1_putchar('1') : uart1_putchar('0');
         uart1_putchar('\n');
-        Task_Sleep(10);
+        Task_Sleep(5);
     }
 }
 
@@ -38,7 +38,7 @@ void Task_ReadJoystick()
     for(;;)
     {
         // update the joystick button state
-        buttonState = read_PORTA(JOYSTICK_PIN_BUTTON) ? LOW : HIGH;
+        buttonState = (PINA & (1<<PA0));
 
         // Read the joystick analog value and save the corresponding direction to joystickDirection, n, e, s, w, and 0 for stop
         int joy_horz = read_ADC(JOYSTICK_PIN_HORZ);
@@ -75,7 +75,7 @@ void Task_ReadJoystick()
             joystickDirection = EAST;
         }
 
-        Task_Sleep(30);
+        Task_Sleep(5);
     }
 }
 
@@ -94,7 +94,10 @@ void a_main()
 
     mode_PORTA_INPUT(JOYSTICK_PIN_HORZ);
     mode_PORTA_INPUT(JOYSTICK_PIN_VERT);
-    mode_PORTA_INPUT(JOYSTICK_PIN_BUTTON);
+
+    DDRA = 0xFF;
+
+
 
     Roomba_Init();
 
