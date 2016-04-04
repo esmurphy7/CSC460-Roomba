@@ -13,6 +13,7 @@
 /*** Analog Pins ***/
 #define JOYSTICK_PIN_HORZ   PF0   // analog pin 0
 #define JOYSTICK_PIN_VERT   PF1   // analog pin 1
+#define JOYSTICK_PIN_BUTN   PF2   // analog pin 2
 
 /*** Digital Pins ***/
 #define JOYSTICK_PIN_BUTTON PA0   // digital pin 22
@@ -26,7 +27,7 @@ void Task_WriteBluetooth()
 {
     for(;;){
         uart1_putchar(joystickDirection);
-        buttonState ? uart1_putchar('1') : uart1_putchar('0');
+        uart1_putchar(buttonState);
         uart1_putchar('\n');
         Task_Sleep(5);
     }
@@ -37,8 +38,8 @@ void Task_ReadJoystick()
 {
     for(;;)
     {
-        // update the joystick button state
-        buttonState = (PINA & (1<<PA0));
+        // The button reads ~0 when pushed, and anything from 10 to 1024 when released
+        buttonState = (read_ADC(JOYSTICK_PIN_BUTN) < 10) ? '1' : '0' ;
 
         // Read the joystick analog value and save the corresponding direction to joystickDirection, n, e, s, w, and 0 for stop
         int joy_horz = read_ADC(JOYSTICK_PIN_HORZ);
@@ -86,30 +87,29 @@ void Idle() {
 
 void a_main()
 {
+    // Debug trigger
     enable_LED(PORTL0);
     disable_LED(PORTL0);
 
-    // setup analog pins
+    // Initialize components
+    uart_init();
+    uart1_init();
     init_ADC();
-
     mode_PORTA_INPUT(JOYSTICK_PIN_HORZ);
     mode_PORTA_INPUT(JOYSTICK_PIN_VERT);
-
     DDRA = 0xFF;
-
-
-
-    Roomba_Init();
-
-    Task_Create(Task_ReadJoystick, 1, 0);
-    Task_Create(Task_WriteBluetooth, 2, 0);
-
-    Task_Create(Idle, 10, 0);
 
     disable_LED(PORTL0);
     disable_LED(PORTL2);
     disable_LED(PORTL5);
     disable_LED(PORTL6);
 
+    // Initialize tasks
+    Task_Create(Task_ReadJoystick, 1, 0);
+    Task_Create(Task_WriteBluetooth, 2, 0);
+
+    Task_Create(Idle, 10, 0);
+
+    // Kill the initialization task
     Task_Terminate();
 }

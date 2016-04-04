@@ -1,10 +1,9 @@
-#include <avr/io.h>				
-#include <avr/interrupt.h>		// ISR handling.
+#include <avr/io.h>
 #include "uart.h"
 
-static volatile int rxn; // buffer 'element' counter.
-static volatile char rx[UART_BUFFER_SIZE]; // buffer of 'char'.
-
+/**
+ * UART0 Handler
+ */
 void uart_init(){
     uint8_t sreg = SREG;
     cli();
@@ -21,7 +20,7 @@ void uart_init(){
     UCSR0A = (1 << TXC0) | (0 << U2X0);
 
     // Enable receiver, transmitter, and rx complete interrupt.
-    UCSR0B = (1<<TXEN0) | (1<<RXEN0) | (1<<RXCIE0);
+    UCSR0B = (1<<TXEN0) | (1<<RXEN0);
     // 8-bit data
     UCSR0C = ((1<<UCSZ01)|(1<<UCSZ00));
     // disable 2x speed
@@ -30,56 +29,29 @@ void uart_init(){
     SREG = sreg;
 }
 
-char uart_getchar(int index)
-{
-    if (index < UART_BUFFER_SIZE) {
-        return rx[index];
-    }
-
-    return 0;
-}
-
-uint8_t uart_bytes_recv(void)
-{
-    return rxn;
-}
-
-void uart_reset_recv(void)
-{
-    uart_rx = 0;
-}
-
 void uart_putchar (char c)
 {
-	cli();
-	while ( !( UCSR0A & (1<<UDRE0)) ); // Wait for empty transmit buffer
-	UDR0 = c;  // Putting data into the buffer, forces transmission
-	sei();
+    cli();
+    while ( !( UCSR0A & (1<<UDRE0)) ); // Wait for empty transmit buffer
+    UDR0 = c;  // Putting data into the buffer, forces transmission
+    sei();
+}
+
+char uart_getchar()
+{
+    while(!(UCSR0A & (1<<RXC0)));
+    return UDR0;
 }
 
 void uart_putstr(char *s)
 {
-	while(*s) uart_putchar(*s++);
+    while(*s) uart_putchar(*s++);
 }
 
-/*
- Interrupt Service Routine (ISR):
-*/
-ISR(USART0_RX_vect)
-{
-    while (!(UCSR0A & (1<<RXC0)));
-
-    rx[rxn] = UDR0;
-    rxn = (rxn + 1) % UART_BUFFER_SIZE;
-    uart_rx = 1;
-}
 
 /**
  * UART1 Handler
  */
-static volatile int rxn1; // buffer 'element' counter.
-static volatile char rx1[UART_BUFFER_SIZE]; // buffer of 'char'.
-
 void uart1_init(){
     uint8_t sreg = SREG;
     cli();
@@ -111,27 +83,13 @@ void uart1_putchar (char c)
 	UDR1 = c;
 }
 
-char uart1_getchar(int index)
+char uart1_getchar()
 {
     while(!(UCSR1A & (1<<RXC1)));
-
     return UDR1;
 }
 
 void uart1_putstr(char *s)
 {
 	while(*s) uart1_putchar(*s++);
-
 }
-
-uint8_t uart1_bytes_recv(void)
-{
-	return rxn1;
-}
-
-void uart1_reset_recv(void)
-{
-	rxn1 = 0;
-	uart1_rx = 0;
-}
-

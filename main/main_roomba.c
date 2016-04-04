@@ -131,10 +131,25 @@ void Task_BtWait()
         // Wait for a newline, which lets us know that the next char will be useful
         while (uart1_getchar(0) != '\n') {};
 
-        joystickDirection = uart1_getchar(0);
-        buttonState = uart1_getchar(0);
+        joystickDirection = uart1_getchar();
+        buttonState = uart1_getchar();
     }
 }
+
+/**
+ * RbWait is a busywait task that listens for roomba uart data
+ */
+//void Task_RbWait()
+//{
+//    for(;;){
+//        // Wait for a newline, which lets us know that the next char will be useful
+//        while (uart_getchar() != '\n') {};
+//
+//        joystickDirection = uart1_getchar();
+//        buttonState = uart1_getchar();
+//    }
+//}
+
 
 
 void Idle() {
