@@ -8,7 +8,7 @@
 #include "../src/utils.h"
 
 /*** Conatants ***/
-#define HIT_THRESHOLD 15   // the threshold of light sensor value that should register a hit
+volatile int HIT_THRESHOLD = 1000;   // the threshold of light sensor value that should register a hit
 
 /*** Analog Pins ***/
 #define LIGHT_SENSOR_PIN PF0  // analog pin 0
@@ -186,7 +186,7 @@ void a_main()
     }
     int avg = (sum/10);
     HIT_THRESHOLD = avg+5;
-    
+
     disable_LED(PORTL0);
     disable_LED(PORTL2);
     disable_LED(PORTL5);
