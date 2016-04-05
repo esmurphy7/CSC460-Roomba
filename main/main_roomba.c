@@ -100,6 +100,7 @@ void Task_Drive()
 
         switch (systemState) {
             case AUTONOMOUS:
+
                 break;
             case MANUAL:
                 writeDrive();
@@ -174,6 +175,18 @@ void a_main()
     mode_PORTA_INPUT(LIGHT_SENSOR_PIN);
     mode_PORTA_OUTPUT(LASER_PIN);
 
+    // calibrate light sensor
+    int sum = 0;
+    int i=0;
+    for(i=0; i<10; i++)
+    {
+        int light = read_ADC(LIGHT_SENSOR_PIN);
+        sum += light;
+        _delay_ms(10);
+    }
+    int avg = (sum/10);
+    HIT_THRESHOLD = avg+5;
+    
     disable_LED(PORTL0);
     disable_LED(PORTL2);
     disable_LED(PORTL5);
