@@ -25,15 +25,16 @@ enum States
     AUTONOMOUS = 4
 };
 
-volatile int systemState = MANUAL;
+volatile int systemState = STARTUP;
 volatile char joystickDirection = NONE;
 volatile char buttonState = '0';
-volatile char hitState = '0';     // HIGH when light sensor reads hit, LOW when not
+volatile char hitState = '0';
 
 volatile char wallSensors = NONE;
 volatile char irSensors = NONE;
 
-volatile int turnTimer = 0;
+volatile int sum = 0;
+volatile int i=0;
 
 void writeDrive()
 {
@@ -71,41 +72,61 @@ void writeDrive()
     Roomba_Direct_Drive(right_wheel, left_wheel);
 }
 
+void processAutomation() {
+    // Schedule the roomba to clean, this will be overridden by any other active actions.
+    Roomba_Clean();
+    systemState == AUTONOMOUS;
+}
+
+void processManual() {
+    // Current implementation doesn't need to do anything in manual drive mode, the bt task writes directly to the
+    // drive vector
+    systemState == MANUAL;
+}
+
+void processStartup() {
+    if (systemState == STARTUP) {
+        // In startup, wait for a joystick input to signal the start of a competition, then fall back to auto mode.
+        if (joystickDirection != NONE) {
+            systemState = AUTONOMOUS;
+            joystickDirection = NONE;
+        }
+    }
+}
+
+void processDead() {
+    // If we're hit, push the killed commands to the roomba, then update the status to dead
+    if (hitState == '1' && systemState != SHOT) {
+        systemState = SHOT;
+
+        // Turn on LEDs for feedback
+        uart_putchar(139);
+        uart_putchar(1);
+        uart_putchar(255);
+        uart_putchar(255);
+
+        Roomba_Stop();
+        Task_Terminate();
+    }
+
+    // Once we've been shot, all drive command are disabled
+    if (systemState == SHOT) {
+        joystickDirection = NONE;
+    }
+}
 
 /***** Core System Tasks *****/
 void Task_Drive()
 {
     for(;;) {
-        // When we're shot, there's nothing more to drive.
-        if (hitState == '1') {
-            systemState = SHOT;
+        // Calculate sensors and state to generate a drive action
+        processAutomation();
+        processManual();
+        processStartup();
+        processDead();
 
-            // Turn on LEDs for feedback
-            uart_putchar(139);
-            uart_putchar(1);
-            uart_putchar(255);
-            uart_putchar(255);
-
-//            Roomba_Stop();
-            Task_Terminate();
-        }
-
-//        // The startup state assumes manual control/does nothing until the user gives a starting input
-//        if (systemState == STARTUP) {
-//            // In startup, wait for a joystick input to signal the start of a competition
-//            if (joystickDirection != NONE) {
-//                systemState = AUTONOMOUS;
-//            }
-//        }
-
-        switch (systemState) {
-            case AUTONOMOUS:
-
-                break;
-            case MANUAL:
-                writeDrive();
-                break;
-        }
+        // Execute the calculated drive commands out to the Roomba
+        writeDrive();
 
 
         // After processing the standard drive commands, request a sensor update to be handled and ready for the next
@@ -142,10 +163,6 @@ void Task_UpdatePins()
     }
 }
 
-
-/**
- * BtWait is a busywait task that listens for uart data
- */
 void Task_BtWait()
 {
     for(;;){
@@ -176,8 +193,6 @@ void a_main()
     mode_PORTA_OUTPUT(LASER_PIN);
 
     // calibrate light sensor
-    int sum = 0;
-    int i=0;
     for(i=0; i<10; i++)
     {
         int light = read_ADC(LIGHT_SENSOR_PIN);
